@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atostogų skaičiuoklė</title>
+  <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -129,7 +130,24 @@
     .btn-danger { background: #fc8181; color: #fff; padding: .3rem .6rem; font-size: .8rem; }
     .btn-danger:hover { background: #f56565; }
 
-    .add-btn-wrap { margin-top: .75rem; }
+    .add-btn-wrap { margin-top: .75rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+
+    .btn-import { background: #48bb78; color: #fff; }
+    .btn-import:hover { background: #38a169; }
+
+    #importFileInput { display: none; }
+
+    .import-status {
+      font-size: .82rem;
+      color: #276749;
+      background: #f0fff4;
+      border: 1px solid #9ae6b4;
+      border-radius: 6px;
+      padding: .3rem .7rem;
+      display: none;
+    }
+
+    .import-status.error { color: #c53030; background: #fff5f5; border-color: #feb2b2; }
 
     /* --- Summary --- */
     .summary-grid {
@@ -227,8 +245,10 @@
   </div>
   <div class="add-btn-wrap">
     <button class="btn btn-primary" onclick="addEntry('used')">+ Panaudotos</button>
-    &nbsp;
     <button class="btn btn-primary" onclick="addEntry('extra')">+ Papildomos</button>
+    <button class="btn btn-import" onclick="document.getElementById('importFileInput').click()">📥 Importuoti iš Excel</button>
+    <input type="file" id="importFileInput" accept=".xlsx,.xls,.ods" onchange="importExcel(this)" />
+    <span id="importStatus" class="import-status"></span>
   </div>
 </div>
 
@@ -442,6 +462,95 @@ function removeEntry(id) {
   entries = entries.filter(e => e.id !== id);
   renderEntries();
   renderSummary();
+}
+
+// ── Excel import ──────────────────────────────────────────────────────────
+function importExcel(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';   // reset so same file can be re-imported
+
+  const statusEl = document.getElementById('importStatus');
+  statusEl.className = 'import-status';
+  statusEl.style.display = 'none';
+
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    try {
+      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+
+      // Find first data row (skip title / header rows)
+      // Header contains "Pradžios data" or date-like values
+      let dataStart = 0;
+      for (let i = 0; i < rows.length; i++) {
+        const cell = rows[i][0];
+        if (cell instanceof Date || (typeof cell === 'string' && /^\d{4}-\d{2}-\d{2}/.test(cell))) {
+          dataStart = i;
+          break;
+        }
+      }
+
+      // Collect unique entries: key = "startDate|endDate|days"
+      const seen = new Set(entries.map(en => `${en.date}|${en.days}`));
+      let added = 0;
+      let skipped = 0;
+
+      for (let i = dataStart; i < rows.length; i++) {
+        const [startRaw, endRaw, daysRaw] = rows[i];
+        if (!startRaw) continue;
+
+        const startDate = formatDate(startRaw);
+        const endDate   = formatDate(endRaw);
+        const days      = parseFloat(daysRaw);
+
+        if (!startDate || isNaN(days)) continue;
+
+        const key = `${startDate}|${days}`;
+        if (seen.has(key)) { skipped++; continue; }
+        seen.add(key);
+
+        const note = endDate && endDate !== startDate ? `${startDate} – ${endDate}` : startDate;
+        entries.push({ id: nextId++, date: startDate, type: 'used', days, note });
+        added++;
+      }
+
+      renderEntries();
+      renderSummary();
+
+      statusEl.style.display = 'inline-block';
+      if (added > 0) {
+        statusEl.className = 'import-status';
+        statusEl.textContent = `✓ Importuota ${added} įrašų${skipped ? `, praleista ${skipped} dublikatų` : ''}.`;
+      } else {
+        statusEl.className = 'import-status error';
+        statusEl.textContent = skipped ? `Visi ${skipped} įrašai jau egzistuoja.` : 'Nerasta tinkamų įrašų.';
+      }
+    } catch (err) {
+      statusEl.style.display = 'inline-block';
+      statusEl.className = 'import-status error';
+      statusEl.textContent = 'Klaida skaitant failą: ' + err.message;
+    }
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function formatDate(val) {
+  if (!val) return null;
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = String(val.getMonth() + 1).padStart(2, '0');
+    const d = String(val.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  }
+  // Already a string like "2021-06-18"
+  const s = String(val).trim();
+  if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
+  // Try parsing
+  const dt = new Date(s);
+  if (!isNaN(dt)) return formatDate(dt);
+  return null;
 }
 
 // ── Live recalc on main inputs ─────────────────────────────────────────────
