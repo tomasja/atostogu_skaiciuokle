@@ -5,74 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Atostogų skaičiuoklė</title>
   <script src="https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css" />
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+  <script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/lt.js"></script>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     body {
-      font-family: 'Segoe UI', system-ui, sans-serif;
-      background: #f0f4f8;
-      color: #1a202c;
+      font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+      background: #f7f7f7;
+      color: #111;
       min-height: 100vh;
-      padding: 2rem 1rem;
+      padding: 0 0 4rem;
     }
+
+    /* ── Header ── */
+    header {
+      background: #fff;
+      padding: 2.5rem 1rem 2rem;
+      text-align: center;
+      border-bottom: 2px solid #FFDD00;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .btn-pdf, .btn-excel {
+      position: absolute;
+      top: 50%;
+      transform: translateY(-50%);
+      font-size: .8rem;
+    }
+    .btn-pdf   { right: 1.25rem; background: #111; color: #fff; border-color: #111; }
+    .btn-pdf:hover   { background: #333; }
+    .btn-excel { right: 11.5rem; background: #1d6f42; color: #fff; border-color: #1d6f42; }
+    .btn-excel:hover { background: #155232; }
 
     h1 {
-      text-align: center;
-      font-size: 1.6rem;
+      font-size: 1.55rem;
       font-weight: 700;
-      color: #2b6cb0;
-      margin-bottom: 1.5rem;
+      color: #111;
+      letter-spacing: -.3px;
     }
 
+    h1 span.accent { color: #FFDD00; background: #111; padding: 0 .35em; border-radius: 4px; }
+
+    /* ── Cards ── */
     .card {
       background: #fff;
-      border-radius: 12px;
-      box-shadow: 0 2px 12px rgba(0,0,0,.08);
-      padding: 1.5rem;
-      margin: 0 auto 1.25rem;
-      max-width: 900px;
+      border: 1px solid #ebebeb;
+      border-radius: 16px;
+      box-shadow: 0 1px 8px rgba(0,0,0,.05);
+      padding: 0;
+      margin: 0 auto 1.5rem;
+      max-width: 960px;
+      overflow: hidden;
     }
 
     .card h2 {
-      font-size: 1rem;
+      font-size: .72rem;
       font-weight: 600;
-      color: #2d3748;
-      margin-bottom: 1rem;
-      padding-bottom: .5rem;
-      border-bottom: 2px solid #ebf4ff;
+      color: #111;
+      background: #FFDD00;
+      text-transform: uppercase;
+      letter-spacing: .8px;
+      padding: .6rem 1.5rem;
+      margin: 0;
     }
 
-    .field { margin-bottom: .9rem; }
+    .card-body {
+      padding: 1.5rem 1.5rem .75rem;
+    }
+
+    /* ── Fields ── */
+    .field { margin-bottom: 1rem; }
 
     label {
       display: block;
-      font-size: .85rem;
+      font-size: .75rem;
       font-weight: 500;
-      color: #4a5568;
-      margin-bottom: .3rem;
+      color: #777;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-bottom: .35rem;
     }
 
     input[type="date"],
+    input.flatpickr-input,
     input[type="number"],
     input[type="text"] {
       width: 100%;
       padding: .5rem .75rem;
-      border: 1.5px solid #cbd5e0;
-      border-radius: 7px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
       font-size: .95rem;
-      transition: border-color .2s;
-      background: #fafbfc;
+      background: #fafafa;
+      transition: border-color .15s, box-shadow .15s;
     }
 
     input:focus {
       outline: none;
-      border-color: #4299e1;
+      border-color: #FFDD00;
+      box-shadow: 0 0 0 3px rgba(255,221,0,.25);
       background: #fff;
     }
 
-    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .row-2   { display: grid; grid-template-columns: 1fr 1fr;  gap: .75rem; }
+    .row-tab { display: grid; grid-template-columns: 1fr 3fr;  gap: .75rem; }
 
-    /* --- Entries table --- */
+    /* ── Entries table ── */
     .entries-wrap { overflow-x: auto; }
 
     table {
@@ -82,113 +125,147 @@
     }
 
     th {
-      background: #ebf4ff;
-      color: #2b6cb0;
-      font-weight: 600;
-      padding: .5rem .6rem;
+      background: #fafafa;
+      color: #777;
+      font-weight: 500;
+      font-size: .72rem;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      padding: .6rem .8rem;
       text-align: left;
       white-space: nowrap;
+      border-bottom: 2px solid #FFDD00;
     }
 
     td {
-      padding: .45rem .6rem;
-      border-bottom: 1px solid #e2e8f0;
+      padding: .55rem .8rem;
+      border-bottom: 1px solid #f0f0f0;
       vertical-align: middle;
     }
 
     tr:last-child td { border-bottom: none; }
-    tr:hover td { background: #f7fafc; }
+    tr:hover td { background: #fffce8; }
 
-    td input[type="number"] {
-      width: 90px;
-      padding: .3rem .5rem;
-      font-size: .88rem;
-    }
+    /* year detail sub-rows */
+    .yr-detail td   { background: #fafafa; font-size: .8rem; color: #555; padding: .35rem .8rem .35rem 2.4rem; border-bottom: 1px solid #f5f5f5; }
+    .yr-detail td:first-child { padding-left: .8rem; color: #aaa; font-size: .72rem; }
+    .yr-detail:last-child td  { border-bottom: 1px solid #f0f0f0; }
+    .yr-toggle { background: none; border: none; cursor: pointer; font-size: .7rem; color: #aaa; padding: 0 4px; line-height: 1; transition: transform .15s; }
+    .yr-toggle.open { transform: rotate(90deg); }
+    .pre2010-adj td { background: #fffbea; font-style: italic; color: #888; border-top: 1px dashed #FFDD00; border-bottom: 1px dashed #FFDD00; }
+    .pre2010-note { font-size: .82rem; color: #888; margin-bottom: 1rem; padding: .5rem .75rem; background: #fffce8; border-left: 3px solid #FFDD00; border-radius: 4px; }
 
-    td input[type="text"] {
-      width: 220px;
-      padding: .3rem .5rem;
-      font-size: .88rem;
-    }
+    td input[type="number"]     { width: 90px;  padding: .3rem .5rem; font-size: .88rem; }
+    td input[type="text"]        { width: 100%;  padding: .3rem .5rem; font-size: .88rem; }
+    td input.flatpickr-input     { width: 115px; padding: .3rem .5rem; font-size: .88rem; }
+    td:last-child                { width: 1px; white-space: nowrap; }
+    td:nth-child(4)              { min-width: 180px; }
 
+    /* ── Buttons ── */
     .btn {
       display: inline-flex;
       align-items: center;
       gap: .3rem;
-      padding: .45rem 1rem;
-      border: none;
-      border-radius: 7px;
-      font-size: .88rem;
-      font-weight: 600;
+      padding: .45rem 1.1rem;
+      border: 1.5px solid transparent;
+      border-radius: 8px;
+      font-size: .84rem;
+      font-weight: 700;
       cursor: pointer;
-      transition: background .2s, transform .1s;
+      transition: background .15s, box-shadow .15s, transform .1s;
     }
 
     .btn:active { transform: scale(.97); }
-    .btn-primary { background: #4299e1; color: #fff; }
-    .btn-primary:hover { background: #3182ce; }
-    .btn-danger { background: #fc8181; color: #fff; padding: .3rem .6rem; font-size: .8rem; }
-    .btn-danger:hover { background: #f56565; }
+
+    .btn-primary {
+      background: #FFDD00;
+      color: #111;
+      border-color: #e6c800;
+    }
+    .btn-primary:hover { background: #ffe629; box-shadow: 0 2px 8px rgba(255,221,0,.45); }
+
+    .btn-danger {
+      background: #fff;
+      color: #c53030;
+      border-color: #fca5a5;
+      padding: .3rem .6rem;
+      font-size: .78rem;
+    }
+    .btn-danger:hover { background: #fff5f5; }
 
     .add-btn-wrap { margin-top: .75rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 
-    .btn-import { background: #48bb78; color: #fff; }
-    .btn-import:hover { background: #38a169; }
+    .btn-import {
+      background: #111;
+      color: #FFDD00;
+      border-color: #111;
+    }
+    .btn-import:hover { background: #333; box-shadow: 0 2px 8px rgba(0,0,0,.25); }
 
     #importFileInput { display: none; }
 
     .import-status {
       font-size: .82rem;
-      color: #276749;
-      background: #f0fff4;
-      border: 1px solid #9ae6b4;
+      font-weight: 600;
+      color: #555;
+      background: #fffce8;
+      border: 1.5px solid #FFDD00;
       border-radius: 6px;
       padding: .3rem .7rem;
       display: none;
     }
 
-    .import-status.error { color: #c53030; background: #fff5f5; border-color: #feb2b2; }
+    .import-status.error { background: #fff5f5; border-color: #fca5a5; color: #c53030; }
 
-    /* --- Summary --- */
+    /* ── Summary ── */
     .summary-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      grid-template-columns: repeat(4, 1fr);
       gap: .75rem;
       margin-top: .5rem;
     }
 
     .stat {
-      background: #ebf4ff;
-      border-radius: 9px;
-      padding: .85rem 1rem;
+      border: 1px solid #ebebeb;
+      border-radius: 14px;
+      padding: 1.1rem .75rem;
       text-align: center;
+      background: #fafafa;
+    }
+
+    .stat.green {
+      background: #111;
+      border-color: #111;
     }
 
     .stat .val {
-      font-size: 1.9rem;
+      font-size: 1.8rem;
       font-weight: 700;
       line-height: 1.1;
+      color: #111;
     }
+
+    .stat.green .val { color: #FFDD00; }
 
     .stat .lbl {
-      font-size: .75rem;
-      color: #4a5568;
-      margin-top: .25rem;
+      font-size: .65rem;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: .4px;
+      margin-top: .35rem;
+      color: #aaa;
     }
 
-    .stat.green .val { color: #276749; }
-    .stat.blue .val  { color: #2b6cb0; }
-    .stat.red .val   { color: #c53030; }
-    .stat.orange .val { color: #c05621; }
+    .stat.green .lbl { color: #FFDD00; opacity: .7; }
 
-    /* --- Year detail --- */
-    #yearDetail { max-width: 900px; margin: 0 auto; }
+    /* ── Year detail ── */
+    #yearDetail { max-width: 960px; margin: 0 auto 1.5rem; }
 
     #yearDetail table th:last-child,
     #yearDetail table td:last-child { text-align: right; }
 
-    .positive { color: #276749; }
-    .negative { color: #c53030; }
+    .positive { color: #1a7a3f; font-weight: 700; }
+    .negative { color: #c53030; font-weight: 700; }
 
     .empty-msg {
       text-align: center;
@@ -198,20 +275,31 @@
     }
 
     @media (max-width: 480px) {
-      .row-2 { grid-template-columns: 1fr; }
+      .row-2, .row-tab        { grid-template-columns: 1fr; }
+      .summary-grid           { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
 <body>
 
-<h1>🏖 Atostogų skaičiuoklė</h1>
+<header>
+  <h1>🏖 Atostogų likučio skaičiuoklė</h1>
+  <button class="btn btn-excel" onclick="exportExcel()">⇩ Eksportuoti Excel</button>
+  <button class="btn btn-pdf" onclick="exportPDF()">⇩ Eksportuoti PDF</button></header>
 
 <!-- Pagrindiniai duomenys -->
 <div class="card">
   <h2>Darbuotojo duomenys</h2>
-  <div class="field">
-    <label>Darbuotojo vardas</label>
-    <input type="text" id="empName" placeholder="Vardas Pavardė" />
+  <div class="card-body">
+  <div class="row-tab">
+    <div class="field">
+      <label>Tabelinis Nr.</label>
+      <input type="text" id="empTab" placeholder="TB-00001" />
+    </div>
+    <div class="field">
+      <label>Darbuotojo vardas</label>
+      <input type="text" id="empName" placeholder="Vardas Pavardė" />
+    </div>
   </div>
   <div class="row-2">
     <div class="field">
@@ -223,11 +311,78 @@
       <input type="number" id="annualDays" min="1" max="365" value="20" />
     </div>
   </div>
+  </div>
+</div>
+
+<!-- Iki 2010 likutis (rodoma tik kai įdarbintas iki 2010) -->
+<div class="card" id="pre2010Card" style="display:none">
+  <h2>Laikotarpis iki 2009-12-31</h2>
+  <div class="card-body">
+    <p class="pre2010-note">Darbuotojas pradėjo dirbti iki 2010 m. Atostogų istorija sistemoje prieinama tik nuo 2010-01-01. Įveskite žinomus suminius duomenis iki 2009-12-31.</p>
+    <div class="row-2">
+      <div class="field">
+        <label>Papildomos atostogos iki 2009-12-31 (d.d.)</label>
+        <input type="number" id="pre2010Extra" min="0" step="0.5" value="0" onchange="renderSummary()" />
+      </div>
+      <div class="field">
+        <label>Panaudotos atostogos iki 2009-12-31 (d.d.)</label>
+        <input type="number" id="pre2010Used" min="0" step="0.5" value="0" onchange="renderSummary()" />
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Suvestinė -->
+<div class="card">
+  <h2>Suvestinė</h2>
+  <div class="card-body">
+  <div class="summary-grid">
+    <div class="stat blue">
+      <div class="val" id="sAccrued">–</div>
+      <div class="lbl">Sukauptos dienos</div>
+    </div>
+    <div class="stat orange">
+      <div class="val" id="sExtra">–</div>
+      <div class="lbl">Papildomos dienos</div>
+    </div>
+    <div class="stat red">
+      <div class="val" id="sUsed">–</div>
+      <div class="lbl">Panaudotos dienos</div>
+    </div>
+    <div class="stat green">
+      <div class="val" id="sBalance">–</div>
+      <div class="lbl">Likutis</div>
+    </div>
+  </div>
+  </div>
+</div>
+
+<!-- Metinis detalizavimas -->
+<div class="card" id="yearDetail">
+  <h2>Metinis kaupimas</h2>
+  <div class="card-body">
+  <div class="entries-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th style="width:28px"></th>
+          <th>Metai</th>
+          <th>Sukauptos</th>
+          <th>Papild.</th>
+          <th>Panaudotos</th>
+          <th>Likutis</th>
+        </tr>
+      </thead>
+      <tbody id="yearBody"></tbody>
+    </table>
+  </div>
+  </div>
 </div>
 
 <!-- Panaudotos / papildomos atostogos -->
 <div class="card">
   <h2>Panaudotos ir papildomos atostogos</h2>
+  <div class="card-body">
   <div class="entries-wrap">
     <table id="entriesTable">
       <thead>
@@ -250,48 +405,6 @@
     <input type="file" id="importFileInput" accept=".xlsx,.xls,.ods" onchange="importExcel(this)" />
     <span id="importStatus" class="import-status"></span>
   </div>
-</div>
-
-<!-- Suvestinė -->
-<div class="card">
-  <h2>Suvestinė</h2>
-  <div class="summary-grid">
-    <div class="stat blue">
-      <div class="val" id="sAccrued">–</div>
-      <div class="lbl">Sukauptos dienos</div>
-    </div>
-    <div class="stat orange">
-      <div class="val" id="sExtra">–</div>
-      <div class="lbl">Papildomos dienos</div>
-    </div>
-    <div class="stat red">
-      <div class="val" id="sUsed">–</div>
-      <div class="lbl">Panaudotos dienos</div>
-    </div>
-    <div class="stat green">
-      <div class="val" id="sBalance">–</div>
-      <div class="lbl">Likutis</div>
-    </div>
-  </div>
-</div>
-
-<!-- Metinis detalizavimas -->
-<div class="card" id="yearDetail">
-  <h2>Metinis kaupimas</h2>
-  <div class="entries-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th>Metai</th>
-          <th>Pilni mėn.</th>
-          <th>Sukauptos</th>
-          <th>Papild.</th>
-          <th>Panaudotos</th>
-          <th>Likutis</th>
-        </tr>
-      </thead>
-      <tbody id="yearBody"></tbody>
-    </table>
   </div>
 </div>
 
@@ -303,14 +416,16 @@ let nextId = 1;
 // ── Helpers ────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-function daysInMonth(year, month) {   // month 0-based
-  return new Date(year, month + 1, 0).getDate();
+function isLeapYear(year) {
+  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
 }
 
 /**
- * Compute accrued days from startDate up to today, proportional to each
- * month's calendar days.
- * Returns array of { year, months (partial), accrued } per year.
+ * Splits the accrual period into segments: each segment = portion of a work year
+ * that falls within one calendar year.
+ * Formula: accrued = (segmentDays / workYearTotalDays) * annualDays
+ * This guarantees exactly annualDays per full work year, regardless of leap years.
+ * Returns array of { calYear, segStart, segEnd, segDays, wyTotalDays, accrued }
  */
 function computeAccrual(startDate, annualDays) {
   const today = new Date();
@@ -318,60 +433,74 @@ function computeAccrual(startDate, annualDays) {
 
   if (!startDate || startDate > today) return [];
 
-  const result = [];
-  let cur = new Date(startDate);
+  const segments = [];
+  let wyStart = new Date(startDate);
+  let wyIndex = 0;
 
-  // Group by year
-  while (cur <= today) {
-    const year = cur.getFullYear();
-    const yearStart = cur < new Date(year, 0, 1) ? new Date(year, 0, 1) : new Date(cur);
-    const yearEnd   = new Date(Math.min(new Date(year, 11, 31), today));
+  while (wyStart <= today) {
+    wyIndex++;
+    const wyStartSnap = new Date(wyStart);
+    const nextAnniv   = new Date(wyStart.getFullYear() + 1, wyStart.getMonth(), wyStart.getDate());
+    const wyEnd       = new Date(nextAnniv - 86400000);
+    const wyTotalDays = Math.round((nextAnniv - wyStart) / 86400000); // always 365 or 366
+    const periodEnd   = wyEnd < today ? wyEnd : new Date(today);
 
-    let accrued = 0;
-    let totalMonths = 0;
-
-    // Iterate months within this year that are within [cur, today]
-    let m = yearStart.getMonth();
-    while (m <= yearEnd.getMonth()) {
-      const monthStart = new Date(year, m, m === yearStart.getMonth() ? yearStart.getDate() : 1);
-      const monthEnd   = new Date(year, m, daysInMonth(year, m));
-      const effectiveEnd = new Date(Math.min(monthEnd, yearEnd));
-
-      const workedDays = (effectiveEnd - monthStart) / 86400000 + 1;
-      const totalDays  = daysInMonth(year, m);
-      const fraction   = workedDays / totalDays;
-
-      accrued += (annualDays / 12) * fraction;
-      totalMonths += fraction;
-      m++;
+    // Split this work year into calendar-year segments
+    let seg = new Date(wyStart);
+    while (seg <= periodEnd) {
+      const calYear  = seg.getFullYear();
+      const calEnd   = new Date(calYear, 11, 31);
+      const segEnd   = calEnd < periodEnd ? calEnd : new Date(periodEnd);
+      const segDays  = Math.round((segEnd - seg) / 86400000) + 1;
+      const accrued  = (segDays / wyTotalDays) * annualDays;
+      segments.push({ calYear, segStart: new Date(seg), segEnd, segDays, wyTotalDays, accrued, wyIndex, wyStartDate: wyStartSnap });
+      seg = new Date(calYear + 1, 0, 1);
     }
 
-    result.push({ year, months: totalMonths, accrued });
-
-    // Move cur to Jan 1 of next year
-    cur = new Date(year + 1, 0, 1);
+    wyStart = nextAnniv;
+    if (wyStart > today) break;
   }
 
-  return result;
+  return segments;
 }
 
 // ── Render entries table ───────────────────────────────────────────────────
+function addEntryRow(e) {
+  $('noEntries').style.display = 'none';
+  const tbody   = $('entriesBody');
+  const tr      = document.createElement('tr');
+  const inputId = `fp-${e.id}`;
+  tr.id = `erow-${e.id}`;
+  tr.innerHTML = `
+    <td><input id="${inputId}" type="text" value="${e.date}" placeholder="MMMM-MM-DD" /></td>
+    <td>${e.type === 'used' ? '🔴 Panaudotos' : '🟢 Papildomos'}</td>
+    <td><input type="number" min="0.5" step="0.5" value="${e.days}" onchange="updateEntry(${e.id},'days',this.value)" /></td>
+    <td><input type="text" value="${e.note}" placeholder="–" onchange="updateEntry(${e.id},'note',this.value)" /></td>
+    <td><button class="btn btn-danger" onclick="removeEntry(${e.id})">✕</button></td>
+  `;
+  tbody.appendChild(tr);
+  flatpickr(`#${inputId}`, {
+    ...FP_CONFIG,
+    defaultDate: e.date || null,
+    onChange: ([d]) => {
+      if (!d) return;
+      const y  = d.getFullYear();
+      const mo = String(d.getMonth() + 1).padStart(2, '0');
+      const da = String(d.getDate()).padStart(2, '0');
+      updateEntry(e.id, 'date', `${y}-${mo}-${da}`);
+    }
+  });
+}
+
 function renderEntries() {
   const tbody = $('entriesBody');
+  // Destroy existing flatpickr instances before clearing
+  tbody.querySelectorAll('input[id^="fp-"]').forEach(inp => {
+    if (inp._flatpickr) inp._flatpickr.destroy();
+  });
   tbody.innerHTML = '';
   $('noEntries').style.display = entries.length ? 'none' : 'block';
-
-  entries.forEach(e => {
-    const tr = document.createElement('tr');
-    tr.innerHTML = `
-      <td><input type="date" value="${e.date}" onchange="updateEntry(${e.id},'date',this.value)" /></td>
-      <td>${e.type === 'used' ? '🔴 Panaudotos' : '🟢 Papildomos'}</td>
-      <td><input type="number" min="0.5" step="0.5" value="${e.days}" onchange="updateEntry(${e.id},'days',this.value)" /></td>
-      <td><input type="text" value="${e.note}" placeholder="–" onchange="updateEntry(${e.id},'note',this.value)" /></td>
-      <td><button class="btn btn-danger" onclick="removeEntry(${e.id})">✕</button></td>
-    `;
-    tbody.appendChild(tr);
-  });
+  entries.forEach(e => addEntryRow(e));
 }
 
 // ── Render summary & year table ────────────────────────────────────────────
@@ -390,16 +519,21 @@ function renderSummary() {
 
   const accrual = computeAccrual(startDate, annualDays);
 
+  // Pre-2010 lump-sum values (only when employee started before 2010)
+  const showPre2010    = $('pre2010Card').style.display !== 'none';
+  const pre2010Extra   = showPre2010 ? (parseFloat($('pre2010Extra').value) || 0) : 0;
+  const pre2010Used    = showPre2010 ? (parseFloat($('pre2010Used').value)  || 0) : 0;
+
   // Totals from entries
-  let totalUsed  = 0;
-  let totalExtra = 0;
+  let totalUsed  = pre2010Used;
+  let totalExtra = pre2010Extra;
   entries.forEach(e => {
     const d = parseFloat(e.days) || 0;
     if (e.type === 'used')  totalUsed  += d;
     else                    totalExtra += d;
   });
 
-  const totalAccrued = accrual.reduce((s, r) => s + r.accrued, 0);
+  const totalAccrued = accrual.reduce((s, seg) => s + seg.accrued, 0);
   const balance      = totalAccrued + totalExtra - totalUsed;
 
   $('sAccrued').textContent = totalAccrued.toFixed(2);
@@ -408,46 +542,111 @@ function renderSummary() {
   $('sBalance').textContent = balance.toFixed(2);
   $('sBalance').className   = 'val ' + (balance < 0 ? 'negative' : 'positive');
 
-  // Year table
+  // Year table – group segments by calendar year
   const tbody = $('yearBody');
   tbody.innerHTML = '';
 
-  // Extra/used per year
+  // Sum accrued per calendar year from segments
+  const accruedByYear = {};
+  // Group segments by calendar year
+  const segsByYear = {};
+  accrual.forEach(seg => {
+    if (!segsByYear[seg.calYear]) segsByYear[seg.calYear] = [];
+    segsByYear[seg.calYear].push(seg);
+    accruedByYear[seg.calYear] = (accruedByYear[seg.calYear] || 0) + seg.accrued;
+  });
+
+  // Map entries to calendar year (parse year directly from string to avoid timezone issues)
   const extraByYear = {};
   const usedByYear  = {};
   entries.forEach(e => {
     if (!e.date) return;
-    const y = new Date(e.date).getFullYear();
+    const y = parseInt(e.date.substring(0, 4), 10);
+    if (!y) return;
     const d = parseFloat(e.days) || 0;
     if (e.type === 'extra') extraByYear[y] = (extraByYear[y] || 0) + d;
     else                    usedByYear[y]  = (usedByYear[y]  || 0) + d;
   });
 
-  let runningBalance = 0;
-  accrual.forEach(row => {
-    const extra   = extraByYear[row.year] || 0;
-    const used    = usedByYear[row.year]  || 0;
-    runningBalance += row.accrued + extra - used;
+  const fmtD = dt => dt.toLocaleDateString('lt-LT');
 
-    const tr = document.createElement('tr');
+  let runningBalance = 0;
+  let pre2010AdjInserted = false;
+  const sortedYears = Object.keys(accruedByYear).sort();
+
+  sortedYears.forEach(yr => {
+    const yearNum     = parseInt(yr, 10);
+    const yearAccrued = accruedByYear[yr];
+    const extra       = extraByYear[yr] || 0;
+    const used        = usedByYear[yr]  || 0;
+
+    // Insert pre-2010 adjustment row just before the first year >= 2010
+    if (!pre2010AdjInserted && yearNum >= 2010 && (pre2010Extra || pre2010Used)) {
+      pre2010AdjInserted = true;
+      runningBalance += pre2010Extra - pre2010Used;
+      const adjClass = runningBalance < 0 ? 'negative' : 'positive';
+      const adjTr = document.createElement('tr');
+      adjTr.className = 'pre2010-adj';
+      adjTr.innerHTML = `
+        <td></td>
+        <td>iki 2009&#8209;12&#8209;31</td>
+        <td>–</td>
+        <td>${pre2010Extra ? pre2010Extra.toFixed(2) : '–'}</td>
+        <td>${pre2010Used  ? pre2010Used.toFixed(2)  : '–'}</td>
+        <td class="${adjClass}">${runningBalance.toFixed(2)}</td>
+      `;
+      tbody.appendChild(adjTr);
+    }
+
+    runningBalance += yearAccrued + extra - used;
+
+    const segs   = segsByYear[yr] || [];
+    const rowId  = `yr-${yr}`;
+    const hasDetail = segs.length > 1;
+
+    const tr       = document.createElement('tr');
     const balClass = runningBalance < 0 ? 'negative' : 'positive';
     tr.innerHTML = `
-      <td>${row.year}</td>
-      <td>${row.months.toFixed(1)}</td>
-      <td>${row.accrued.toFixed(2)}</td>
+      <td>${hasDetail ? `<button class="yr-toggle" onclick="toggleYrDetail('${rowId}', this)">▶</button>` : ''}</td>
+      <td><strong>${yr}</strong></td>
+      <td>${yearAccrued.toFixed(2)}</td>
       <td>${extra ? extra.toFixed(2) : '–'}</td>
       <td>${used  ? used.toFixed(2)  : '–'}</td>
       <td class="${balClass}">${runningBalance.toFixed(2)}</td>
     `;
     tbody.appendChild(tr);
+
+    if (hasDetail) {
+      segs.forEach(seg => {
+        const dtr = document.createElement('tr');
+        dtr.className = `yr-detail yr-detail-${rowId}`;
+        dtr.style.display = 'none';
+        dtr.innerHTML = `
+          <td></td>
+          <td colspan="2" style="white-space:nowrap">${fmtD(seg.segStart)} – ${fmtD(seg.segEnd)}</td>
+          <td style="color:#888">${seg.accrued.toFixed(2)} d.d.</td>
+          <td colspan="2" style="color:#aaa;font-size:.72rem">${seg.segDays}/${seg.wyTotalDays} darbo m. dienų</td>
+        `;
+        tbody.appendChild(dtr);
+      });
+    }
   });
+}
+
+// ── Year detail toggle ─────────────────────────────────────────────────────
+function toggleYrDetail(rowId, btn) {
+  const rows = document.querySelectorAll(`.yr-detail-${rowId}`);
+  const open = btn.classList.toggle('open');
+  rows.forEach(r => r.style.display = open ? '' : 'none');
 }
 
 // ── Entry CRUD ─────────────────────────────────────────────────────────────
 function addEntry(type) {
-  const today = new Date().toISOString().split('T')[0];
-  entries.push({ id: nextId++, date: today, type, days: 1, note: '' });
-  renderEntries();
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
+  const e = { id: nextId++, date: today, type, days: 1, note: '' };
+  entries.push(e);
+  addEntryRow(e);
   renderSummary();
 }
 
@@ -460,7 +659,13 @@ function updateEntry(id, field, value) {
 
 function removeEntry(id) {
   entries = entries.filter(e => e.id !== id);
-  renderEntries();
+  const row = document.getElementById(`erow-${id}`);
+  if (row) {
+    const inp = row.querySelector(`#fp-${id}`);
+    if (inp && inp._flatpickr) inp._flatpickr.destroy();
+    row.remove();
+  }
+  $('noEntries').style.display = entries.length ? 'none' : 'block';
   renderSummary();
 }
 
@@ -553,19 +758,340 @@ function formatDate(val) {
   return null;
 }
 
+// ── Flatpickr setup ───────────────────────────────────────────────────────
+const FP_CONFIG = {
+  locale: 'lt',
+  dateFormat: 'Y-m-d',
+  allowInput: true
+};
+
+flatpickr('#startDate', {
+  ...FP_CONFIG,
+  onChange: () => { checkPre2010(); renderSummary(); }
+});
+
 // ── Live recalc on main inputs ─────────────────────────────────────────────
-['startDate', 'annualDays'].forEach(id => {
+['annualDays'].forEach(id => {
   $(id).addEventListener('input', renderSummary);
 });
 
+// ── Pre-2010 card visibility ───────────────────────────────────────────────
+function checkPre2010() {
+  const val  = $('startDate').value;
+  const show = val && new Date(val) < new Date('2010-01-01');
+  $('pre2010Card').style.display = show ? '' : 'none';
+  if (!show) {
+    $('pre2010Extra').value = 0;
+    $('pre2010Used').value  = 0;
+  }
+}
+
 // ── Init ───────────────────────────────────────────────────────────────────
-// Default start date: one year ago
 const d = new Date();
 d.setFullYear(d.getFullYear() - 1);
-$('startDate').value = d.toISOString().split('T')[0];
+$('startDate').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 
+checkPre2010();
 renderEntries();
 renderSummary();
+
+// ── PDF export ───────────────────────────────────────────────────────
+function exportExcel() {
+  const name       = $('empName').value   || '';
+  const tab        = $('empTab').value    || '';
+  const startVal   = $('startDate').value || '';
+  const annualDays = parseFloat($('annualDays').value) || 0;
+
+  const wb = XLSX.utils.book_new();
+
+  // ── Sheet 1: Suvestinė ───────────────────────────────────────────────────
+  const showPre2010x  = $('pre2010Card').style.display !== 'none';
+  const pre2010ExtraX = showPre2010x ? (parseFloat($('pre2010Extra').value) || 0) : 0;
+  const pre2010UsedX  = showPre2010x ? (parseFloat($('pre2010Used').value)  || 0) : 0;
+
+  const sum1 = [
+    ['Tabelinis Nr.',   tab],
+    ['Vardas',         name],
+    ['Įdarbinimo data', startVal],
+    ['Metinė norma (d.d.)', annualDays],
+    [],
+    ['', 'Sukauptos', 'Papildomos', 'Panaudotos', 'Likutis'],
+    ['', parseFloat($('sAccrued').textContent) || 0,
+         parseFloat($('sExtra').textContent)   || 0,
+         parseFloat($('sUsed').textContent)    || 0,
+         parseFloat($('sBalance').textContent) || 0],
+    ...(showPre2010x ? [
+      [],
+      ['Laikotarpis iki 2009-12-31'],
+      ['  Papildomos atostogos', pre2010ExtraX],
+      ['  Panaudotos atostogos', pre2010UsedX],
+      ['  Likutis', pre2010ExtraX - pre2010UsedX],
+    ] : []),
+  ];
+  const ws1 = XLSX.utils.aoa_to_sheet(sum1);
+  ws1['!cols'] = [{wch:22},{wch:14},{wch:14},{wch:14},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, ws1, 'Suvestinė');
+
+  // ── Sheet 2: Kaupimas pagal darbo metus ──────────────────────────────────
+  const wyRows = [['Nr.', 'Laikotarpis nuo', 'Laikotarpis iki', 'Sukaupta d.d.', 'Papild. d.d.', '% normos', 'Nepilni']];
+  if (startVal && annualDays) {
+    const sd = new Date(startVal);
+    sd.setHours(0, 0, 0, 0);
+    const segs = computeAccrual(sd, annualDays);
+    const wyMap = {};
+    segs.forEach(seg => {
+      if (!wyMap[seg.wyIndex]) {
+        wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, segDaysTotal: 0 };
+      }
+      wyMap[seg.wyIndex].accrued      += seg.accrued;
+      wyMap[seg.wyIndex].segDaysTotal += seg.segDays;
+    });
+    const extraByWY = {};
+    entries.filter(en => en.type === 'extra').forEach(en => {
+      if (!en.date) return;
+      const entryDate = new Date(en.date); entryDate.setHours(0,0,0,0);
+      Object.values(wyMap).forEach(wy => {
+        const wyEnd = new Date(wy.wyStartDate);
+        wyEnd.setFullYear(wyEnd.getFullYear() + 1);
+        if (entryDate >= wy.wyStartDate && entryDate < wyEnd)
+          extraByWY[wy.wyIndex] = (extraByWY[wy.wyIndex] || 0) + (parseFloat(en.days) || 0);
+      });
+    });
+    let totalAcc = 0, totalExt = 0;
+    Object.values(wyMap).forEach(wy => {
+      const wyEnd = new Date(wy.wyStartDate);
+      wyEnd.setFullYear(wyEnd.getFullYear() + 1);
+      wyEnd.setDate(wyEnd.getDate() - 1);
+      const isPartial = wy.segDaysTotal < wy.wyTotalDays;
+      const pct       = Math.round((wy.segDaysTotal / wy.wyTotalDays) * 100);
+      const toDate    = isPartial ? new Date() : wyEnd;
+      const extra     = extraByWY[wy.wyIndex] || 0;
+      totalAcc += wy.accrued; totalExt += extra;
+      wyRows.push([
+        wy.wyIndex,
+        wy.wyStartDate,
+        toDate,
+        Math.round(wy.accrued * 100) / 100,
+        extra || '',
+        pct / 100,
+        isPartial ? 'Taip' : ''
+      ]);
+    });
+    wyRows.push(['', 'Iš viso:', '', Math.round(totalAcc * 100) / 100, totalExt || '', '', '']);
+  }
+  const ws2 = XLSX.utils.aoa_to_sheet(wyRows);
+  ws2['!cols'] = [{wch:6},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:10}];
+  // Format date columns and percent column
+  const dateStyle = { numFmt: 'yyyy-mm-dd' };
+  const pctStyle  = { numFmt: '0%' };
+  for (let r = 1; r < wyRows.length - 1; r++) {
+    const R = r + 1;
+    ['B','C'].forEach(col => {
+      const cell = ws2[col + R];
+      if (cell) cell.z = 'yyyy-mm-dd';
+    });
+    const pcell = ws2['F' + R];
+    if (pcell) pcell.z = '0%';
+  }
+  XLSX.utils.book_append_sheet(wb, ws2, 'Kaupimas pagal darbo metus');
+
+  // ── Sheet 3: Įrašai ──────────────────────────────────────────────────────
+  const entryRows = [['Data', 'Tipas', 'Dienos', 'Pastaba']];
+  entries.forEach(e => entryRows.push([
+    e.date,
+    e.type === 'used' ? 'Panaudotos' : 'Papildomos',
+    Math.round((parseFloat(e.days) || 0) * 100) / 100,
+    e.note || ''
+  ]));
+  const ws3 = XLSX.utils.aoa_to_sheet(entryRows);
+  ws3['!cols'] = [{wch:12},{wch:14},{wch:10},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Įrašai');
+
+  const fileName = `ataskaita${name ? '_' + name.replace(/\s+/g,'_') : ''}.xlsx`;
+  XLSX.writeFile(wb, fileName);
+}
+
+function exportPDF() {
+  const name    = $('empName').value   || '–';
+  const tab     = $('empTab').value    || '–';
+  const start   = $('startDate').value || '–';
+  const annual  = $('annualDays').value || '–';
+  const accrued = $('sAccrued').textContent;
+  const extra   = $('sExtra').textContent;
+  const used    = $('sUsed').textContent;
+  const balance = $('sBalance').textContent;
+  const today   = new Date().toLocaleDateString('lt-LT');
+
+  // ── Work-year breakdown table ────────────────────────────────────────────
+  let workYearRows = '';
+  let hasPartialWY = false;
+  const startVal2   = $('startDate').value;
+  const annualDays2 = parseFloat($('annualDays').value) || 0;
+  if (startVal2 && annualDays2) {
+    const sd2 = new Date(startVal2);
+    sd2.setHours(0, 0, 0, 0);
+    const segs2 = computeAccrual(sd2, annualDays2);
+    const wyMap = {};
+    segs2.forEach(seg => {
+      if (!wyMap[seg.wyIndex]) {
+        wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, segDaysTotal: 0 };
+      }
+      wyMap[seg.wyIndex].accrued      += seg.accrued;
+      wyMap[seg.wyIndex].segDaysTotal += seg.segDays;
+    });
+    // Map extra entries to work years
+    const extraByWY = {};
+    entries.filter(en => en.type === 'extra').forEach(en => {
+      if (!en.date) return;
+      const entryDate = new Date(en.date);
+      entryDate.setHours(0, 0, 0, 0);
+      Object.values(wyMap).forEach(wy => {
+        const wyEnd = new Date(wy.wyStartDate);
+        wyEnd.setFullYear(wyEnd.getFullYear() + 1);
+        if (entryDate >= wy.wyStartDate && entryDate < wyEnd) {
+          extraByWY[wy.wyIndex] = (extraByWY[wy.wyIndex] || 0) + (parseFloat(en.days) || 0);
+        }
+      });
+    });
+
+    const wyList = Object.values(wyMap);
+    workYearRows = wyList.map(wy => {
+      const wyEndDate = new Date(wy.wyStartDate);
+      wyEndDate.setFullYear(wyEndDate.getFullYear() + 1);
+      wyEndDate.setDate(wyEndDate.getDate() - 1);
+      const isPartial = wy.segDaysTotal < wy.wyTotalDays;
+      if (isPartial) hasPartialWY = true;
+      const pct       = Math.round((wy.segDaysTotal / wy.wyTotalDays) * 100);
+      const toStr     = isPartial
+        ? new Date().toLocaleDateString('lt-LT') + ' *'
+        : wyEndDate.toLocaleDateString('lt-LT');
+      const extraDays = extraByWY[wy.wyIndex] || 0;
+      const extraCell = extraDays ? `<b>${extraDays.toFixed(2)}</b>` : '<span style="color:#bbb">–</span>';
+      return `<tr>
+        <td style="text-align:center;color:#888">${wy.wyIndex}</td>
+        <td>${wy.wyStartDate.toLocaleDateString('lt-LT')} &ndash; ${toStr}</td>
+        <td style="text-align:right">${wy.accrued.toFixed(2)}</td>
+        <td style="text-align:right">${extraCell}</td>
+        <td style="text-align:center;color:#888">${pct}%</td>
+      </tr>`;
+    }).join('');
+
+    // Summary row
+    const totalWYAccrued = wyList.reduce((s, wy) => s + wy.accrued, 0);
+    const totalWYExtra   = Object.values(extraByWY).reduce((s, v) => s + v, 0);
+    workYearRows += `<tr style="font-weight:700;background:#f5f5f5;border-top:2px solid #FFDD00">
+      <td colspan="2" style="text-align:right;color:#555;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px">Iš viso:</td>
+      <td style="text-align:right">${totalWYAccrued.toFixed(2)}</td>
+      <td style="text-align:right">${totalWYExtra ? totalWYExtra.toFixed(2) : '<span style="color:#bbb">–</span>'}</td>
+      <td></td>
+    </tr>`;
+  }
+  const partialNote = hasPartialWY
+    ? '<p style="font-size:8px;color:#aaa;margin-top:5px">* Nepilni darbo metai &ndash; skaičiuota iki šiandien</p>'
+    : '';
+
+  // ── Calendar-year summary table ───────────────────────────────────────────
+  const yearRows = Array.from($('yearBody').querySelectorAll('tr:not(.yr-detail)')).map(tr => {
+    const cells = tr.querySelectorAll('td');
+    if (cells.length < 6) return ''; // skip sub-rows
+    const bal   = cells[5];
+    const cls   = bal.classList.contains('negative') ? 'color:#c00' : 'color:#1a7a3f';
+    return `<tr>
+      <td>${cells[1].textContent}</td>
+      <td>${cells[2].textContent}</td>
+      <td>${cells[3].textContent}</td>
+      <td>${cells[4].textContent}</td>
+      <td style="text-align:right;font-weight:600;${cls}">${bal.textContent}</td>
+    </tr>`;
+  }).join('');
+
+  const entryRows = entries.length
+    ? entries.map(e => `<tr>
+        <td>${e.date}</td>
+        <td>${e.type === 'used' ? 'Panaudotos' : 'Papildomos'}</td>
+        <td>${(+e.days).toFixed(2)}</td>
+        <td>${e.note || '–'}</td>
+      </tr>`).join('')
+    : '<tr><td colspan="4" style="color:#aaa;text-align:center">Įrašų nėra</td></tr>';
+
+  const html = `<!DOCTYPE html>
+<html lang="lt"><head><meta charset="UTF-8"/><title>Ataskaita</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:Arial,Helvetica,sans-serif;font-size:11px;color:#111;padding:28px 36px}
+  @media print{body{padding:0}@page{margin:14mm;size:A4}}
+  .hdr{display:flex;justify-content:space-between;align-items:flex-end;border-bottom:3px solid #FFDD00;padding-bottom:10px;margin-bottom:18px}
+  .hdr h1{font-size:15px;font-weight:700}
+  .hdr .meta{font-size:9px;color:#888}
+  .sec{margin-bottom:18px}
+  .stitle{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;border-bottom:1px solid #eee;padding-bottom:3px;margin-bottom:10px}
+  .info-row{display:flex;gap:12px;margin-bottom:14px}
+  .info-item{flex:1}
+  .lbl{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:.4px}
+  .val{font-size:12px;font-weight:700;margin-top:1px}
+  .stats{display:flex;gap:8px}
+  .stat{flex:1;border:1px solid #eee;border-radius:5px;padding:9px 6px;text-align:center}
+  .stat.hl{background:#111;border-color:#111}
+  .sv{font-size:17px;font-weight:700;color:#111}
+  .stat.hl .sv{color:#FFDD00}
+  .sl{font-size:8px;color:#aaa;margin-top:2px;text-transform:uppercase;letter-spacing:.3px}
+  .stat.hl .sl{color:#ccc}
+  table{width:100%;border-collapse:collapse;font-size:10px;margin-top:2px}
+  th{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:#888;background:#f7f7f7;padding:5px 6px;text-align:left;border-bottom:2px solid #FFDD00}
+  td{padding:5px 6px;border-bottom:1px solid #f0f0f0}
+  tr:last-child td{border-bottom:none}
+  .footer{margin-top:24px;border-top:1px solid #eee;padding-top:6px;font-size:8px;color:#ccc;text-align:right}
+</style></head><body>
+<div class="hdr"><h1>Atostogų likučio ataskaita</h1><div class="meta">Sugeneruota: ${today}</div></div>
+<div class="sec">
+  <div class="stitle">Darbuotojo duomenys</div>
+  <div class="info-row">
+    <div class="info-item"><div class="lbl">Tabelinis Nr.</div><div class="val">${tab}</div></div>
+    <div class="info-item"><div class="lbl">Vardas</div><div class="val">${name}</div></div>
+    <div class="info-item"><div class="lbl">Įdarbinimo data</div><div class="val">${start}</div></div>
+    <div class="info-item"><div class="lbl">Metinė norma (d.d.)</div><div class="val">${annual}</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="stitle">Suvestinė</div>
+  <div class="stats">
+    <div class="stat"><div class="sv">${accrued}</div><div class="sl">Sukauptos</div></div>
+    <div class="stat"><div class="sv">${extra}</div><div class="sl">Papildomos</div></div>
+    <div class="stat"><div class="sv">${used}</div><div class="sl">Panaudotos</div></div>
+    <div class="stat hl"><div class="sv">${balance}</div><div class="sl">Likutis</div></div>
+  </div>
+</div>
+<div class="sec">
+  <div class="stitle">Atostogų įrašai</div>
+  <table><thead><tr><th>Data</th><th>Tipas</th><th>Dienos</th><th>Pastaba</th></tr></thead>
+  <tbody>${entryRows}</tbody></table>
+</div>
+<div class="sec">
+  <div class="stitle">Kaupimas pagal darbo metus</div>
+  <table><thead><tr>
+    <th style="text-align:center;width:32px">Nr.</th>
+    <th>Laikotarpis</th>
+    <th style="text-align:right">Sukaupta d.d.</th>
+    <th style="text-align:right">Papild. d.d.</th>
+    <th style="text-align:center">% normos</th>
+  </tr></thead>
+  <tbody>${workYearRows || '<tr><td colspan="5" style="color:#aaa;text-align:center">N\u0117ra duomen\u0173</td></tr>'}</tbody></table>
+  ${partialNote}
+</div>
+<div class="sec">
+  <div class="stitle">Metinis kaupimas (pagal kalendorinius metus)</div>
+  <table><thead><tr><th>Metai</th><th>Sukauptos</th><th>Papild.</th><th>Panaudotos</th><th style="text-align:right">Likutis</th></tr></thead>
+  <tbody>${yearRows}</tbody></table>
+</div>
+<div class="footer">Atostogų likučio skaičiuoklė</div>
+</body></html>`;
+
+  const win = window.open('', '_blank', 'width=900,height=700');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => win.print(), 600);
+}
 </script>
 </body>
 </html>
