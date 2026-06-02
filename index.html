@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Atostogų skaičiuoklė</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: #f0f4f8;
+      color: #1a202c;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    h1 {
+      text-align: center;
+      font-size: 1.6rem;
+      font-weight: 700;
+      color: #2b6cb0;
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background: #fff;
+      border-radius: 12px;
+      box-shadow: 0 2px 12px rgba(0,0,0,.08);
+      padding: 1.5rem;
+      margin: 0 auto 1.25rem;
+      max-width: 640px;
+    }
+
+    .card h2 {
+      font-size: 1rem;
+      font-weight: 600;
+      color: #2d3748;
+      margin-bottom: 1rem;
+      padding-bottom: .5rem;
+      border-bottom: 2px solid #ebf4ff;
+    }
+
+    .field { margin-bottom: .9rem; }
+
+    label {
+      display: block;
+      font-size: .85rem;
+      font-weight: 500;
+      color: #4a5568;
+      margin-bottom: .3rem;
+    }
+
+    input[type="date"],
+    input[type="number"],
+    input[type="text"] {
+      width: 100%;
+      padding: .5rem .75rem;
+      border: 1.5px solid #cbd5e0;
+      border-radius: 7px;
+      font-size: .95rem;
+      transition: border-color .2s;
+      background: #fafbfc;
+    }
+
+    input:focus {
+      outline: none;
+      border-color: #4299e1;
+      background: #fff;
+    }
+
+    .row-2 { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+
+    /* --- Entries table --- */
+    .entries-wrap { overflow-x: auto; }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: .88rem;
+    }
+
+    th {
+      background: #ebf4ff;
+      color: #2b6cb0;
+      font-weight: 600;
+      padding: .5rem .6rem;
+      text-align: left;
+      white-space: nowrap;
+    }
+
+    td {
+      padding: .45rem .6rem;
+      border-bottom: 1px solid #e2e8f0;
+      vertical-align: middle;
+    }
+
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: #f7fafc; }
+
+    td input[type="number"] {
+      width: 90px;
+      padding: .3rem .5rem;
+      font-size: .88rem;
+    }
+
+    td input[type="text"] {
+      width: 140px;
+      padding: .3rem .5rem;
+      font-size: .88rem;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .3rem;
+      padding: .45rem 1rem;
+      border: none;
+      border-radius: 7px;
+      font-size: .88rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background .2s, transform .1s;
+    }
+
+    .btn:active { transform: scale(.97); }
+    .btn-primary { background: #4299e1; color: #fff; }
+    .btn-primary:hover { background: #3182ce; }
+    .btn-danger { background: #fc8181; color: #fff; padding: .3rem .6rem; font-size: .8rem; }
+    .btn-danger:hover { background: #f56565; }
+
+    .add-btn-wrap { margin-top: .75rem; }
+
+    /* --- Summary --- */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: .75rem;
+      margin-top: .5rem;
+    }
+
+    .stat {
+      background: #ebf4ff;
+      border-radius: 9px;
+      padding: .85rem 1rem;
+      text-align: center;
+    }
+
+    .stat .val {
+      font-size: 1.9rem;
+      font-weight: 700;
+      line-height: 1.1;
+    }
+
+    .stat .lbl {
+      font-size: .75rem;
+      color: #4a5568;
+      margin-top: .25rem;
+    }
+
+    .stat.green .val { color: #276749; }
+    .stat.blue .val  { color: #2b6cb0; }
+    .stat.red .val   { color: #c53030; }
+    .stat.orange .val { color: #c05621; }
+
+    /* --- Year detail --- */
+    #yearDetail { max-width: 640px; margin: 0 auto; }
+
+    #yearDetail table th:last-child,
+    #yearDetail table td:last-child { text-align: right; }
+
+    .positive { color: #276749; }
+    .negative { color: #c53030; }
+
+    .empty-msg {
+      text-align: center;
+      color: #a0aec0;
+      font-size: .9rem;
+      padding: 1rem 0;
+    }
+
+    @media (max-width: 480px) {
+      .row-2 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<h1>🏖 Atostogų skaičiuoklė</h1>
+
+<!-- Pagrindiniai duomenys -->
+<div class="card">
+  <h2>Darbuotojo duomenys</h2>
+  <div class="field">
+    <label>Darbuotojo vardas</label>
+    <input type="text" id="empName" placeholder="Vardas Pavardė" />
+  </div>
+  <div class="row-2">
+    <div class="field">
+      <label>Įdarbinimo data</label>
+      <input type="date" id="startDate" />
+    </div>
+    <div class="field">
+      <label>Metinis atostogų skaičius (d. d.)</label>
+      <input type="number" id="annualDays" min="1" max="365" value="20" />
+    </div>
+  </div>
+</div>
+
+<!-- Panaudotos / papildomos atostogos -->
+<div class="card">
+  <h2>Panaudotos ir papildomos atostogos</h2>
+  <div class="entries-wrap">
+    <table id="entriesTable">
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Tipas</th>
+          <th>Dienos</th>
+          <th>Pastaba</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody id="entriesBody"></tbody>
+    </table>
+    <p id="noEntries" class="empty-msg">Įrašų nėra. Pridėkite panaudotas arba papildomas atostogas.</p>
+  </div>
+  <div class="add-btn-wrap">
+    <button class="btn btn-primary" onclick="addEntry('used')">+ Panaudotos</button>
+    &nbsp;
+    <button class="btn btn-primary" onclick="addEntry('extra')">+ Papildomos</button>
+  </div>
+</div>
+
+<!-- Suvestinė -->
+<div class="card">
+  <h2>Suvestinė</h2>
+  <div class="summary-grid">
+    <div class="stat blue">
+      <div class="val" id="sAccrued">–</div>
+      <div class="lbl">Sukauptos dienos</div>
+    </div>
+    <div class="stat orange">
+      <div class="val" id="sExtra">–</div>
+      <div class="lbl">Papildomos dienos</div>
+    </div>
+    <div class="stat red">
+      <div class="val" id="sUsed">–</div>
+      <div class="lbl">Panaudotos dienos</div>
+    </div>
+    <div class="stat green">
+      <div class="val" id="sBalance">–</div>
+      <div class="lbl">Likutis</div>
+    </div>
+  </div>
+</div>
+
+<!-- Metinis detalizavimas -->
+<div class="card" id="yearDetail">
+  <h2>Metinis kaupimas</h2>
+  <div class="entries-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Metai</th>
+          <th>Pilni mėn.</th>
+          <th>Sukauptos</th>
+          <th>Papild.</th>
+          <th>Panaudotos</th>
+          <th>Likutis</th>
+        </tr>
+      </thead>
+      <tbody id="yearBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+let entries = [];   // { id, date, type: 'used'|'extra', days, note }
+let nextId = 1;
+
+// ── Helpers ────────────────────────────────────────────────────────────────
+const $ = id => document.getElementById(id);
+
+function daysInMonth(year, month) {   // month 0-based
+  return new Date(year, month + 1, 0).getDate();
+}
+
+/**
+ * Compute accrued days from startDate up to today, proportional to each
+ * month's calendar days.
+ * Returns array of { year, months (partial), accrued } per year.
+ */
+function computeAccrual(startDate, annualDays) {
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  if (!startDate || startDate > today) return [];
+
+  const result = [];
+  let cur = new Date(startDate);
+
+  // Group by year
+  while (cur <= today) {
+    const year = cur.getFullYear();
+    const yearStart = cur < new Date(year, 0, 1) ? new Date(year, 0, 1) : new Date(cur);
+    const yearEnd   = new Date(Math.min(new Date(year, 11, 31), today));
+
+    let accrued = 0;
+    let totalMonths = 0;
+
+    // Iterate months within this year that are within [cur, today]
+    let m = yearStart.getMonth();
+    while (m <= yearEnd.getMonth()) {
+      const monthStart = new Date(year, m, m === yearStart.getMonth() ? yearStart.getDate() : 1);
+      const monthEnd   = new Date(year, m, daysInMonth(year, m));
+      const effectiveEnd = new Date(Math.min(monthEnd, yearEnd));
+
+      const workedDays = (effectiveEnd - monthStart) / 86400000 + 1;
+      const totalDays  = daysInMonth(year, m);
+      const fraction   = workedDays / totalDays;
+
+      accrued += (annualDays / 12) * fraction;
+      totalMonths += fraction;
+      m++;
+    }
+
+    result.push({ year, months: totalMonths, accrued });
+
+    // Move cur to Jan 1 of next year
+    cur = new Date(year + 1, 0, 1);
+  }
+
+  return result;
+}
+
+// ── Render entries table ───────────────────────────────────────────────────
+function renderEntries() {
+  const tbody = $('entriesBody');
+  tbody.innerHTML = '';
+  $('noEntries').style.display = entries.length ? 'none' : 'block';
+
+  entries.forEach(e => {
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td><input type="date" value="${e.date}" onchange="updateEntry(${e.id},'date',this.value)" /></td>
+      <td>${e.type === 'used' ? '🔴 Panaudotos' : '🟢 Papildomos'}</td>
+      <td><input type="number" min="0.5" step="0.5" value="${e.days}" onchange="updateEntry(${e.id},'days',this.value)" /></td>
+      <td><input type="text" value="${e.note}" placeholder="–" onchange="updateEntry(${e.id},'note',this.value)" /></td>
+      <td><button class="btn btn-danger" onclick="removeEntry(${e.id})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Render summary & year table ────────────────────────────────────────────
+function renderSummary() {
+  const startVal   = $('startDate').value;
+  const annualDays = parseFloat($('annualDays').value) || 0;
+
+  if (!startVal || !annualDays) {
+    ['sAccrued','sExtra','sUsed','sBalance'].forEach(id => $(id).textContent = '–');
+    $('yearBody').innerHTML = '';
+    return;
+  }
+
+  const startDate = new Date(startVal);
+  startDate.setHours(0,0,0,0);
+
+  const accrual = computeAccrual(startDate, annualDays);
+
+  // Totals from entries
+  let totalUsed  = 0;
+  let totalExtra = 0;
+  entries.forEach(e => {
+    const d = parseFloat(e.days) || 0;
+    if (e.type === 'used')  totalUsed  += d;
+    else                    totalExtra += d;
+  });
+
+  const totalAccrued = accrual.reduce((s, r) => s + r.accrued, 0);
+  const balance      = totalAccrued + totalExtra - totalUsed;
+
+  $('sAccrued').textContent = totalAccrued.toFixed(2);
+  $('sExtra').textContent   = totalExtra.toFixed(2);
+  $('sUsed').textContent    = totalUsed.toFixed(2);
+  $('sBalance').textContent = balance.toFixed(2);
+  $('sBalance').className   = 'val ' + (balance < 0 ? 'negative' : 'positive');
+
+  // Year table
+  const tbody = $('yearBody');
+  tbody.innerHTML = '';
+
+  // Extra/used per year
+  const extraByYear = {};
+  const usedByYear  = {};
+  entries.forEach(e => {
+    if (!e.date) return;
+    const y = new Date(e.date).getFullYear();
+    const d = parseFloat(e.days) || 0;
+    if (e.type === 'extra') extraByYear[y] = (extraByYear[y] || 0) + d;
+    else                    usedByYear[y]  = (usedByYear[y]  || 0) + d;
+  });
+
+  let runningBalance = 0;
+  accrual.forEach(row => {
+    const extra   = extraByYear[row.year] || 0;
+    const used    = usedByYear[row.year]  || 0;
+    runningBalance += row.accrued + extra - used;
+
+    const tr = document.createElement('tr');
+    const balClass = runningBalance < 0 ? 'negative' : 'positive';
+    tr.innerHTML = `
+      <td>${row.year}</td>
+      <td>${row.months.toFixed(1)}</td>
+      <td>${row.accrued.toFixed(2)}</td>
+      <td>${extra ? extra.toFixed(2) : '–'}</td>
+      <td>${used  ? used.toFixed(2)  : '–'}</td>
+      <td class="${balClass}">${runningBalance.toFixed(2)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+// ── Entry CRUD ─────────────────────────────────────────────────────────────
+function addEntry(type) {
+  const today = new Date().toISOString().split('T')[0];
+  entries.push({ id: nextId++, date: today, type, days: 1, note: '' });
+  renderEntries();
+  renderSummary();
+}
+
+function updateEntry(id, field, value) {
+  const e = entries.find(e => e.id === id);
+  if (!e) return;
+  e[field] = field === 'days' ? parseFloat(value) || 0 : value;
+  renderSummary();
+}
+
+function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  renderEntries();
+  renderSummary();
+}
+
+// ── Live recalc on main inputs ─────────────────────────────────────────────
+['startDate', 'annualDays'].forEach(id => {
+  $(id).addEventListener('input', renderSummary);
+});
+
+// ── Init ───────────────────────────────────────────────────────────────────
+// Default start date: one year ago
+const d = new Date();
+d.setFullYear(d.getFullYear() - 1);
+$('startDate').value = d.toISOString().split('T')[0];
+
+renderEntries();
+renderSummary();
+</script>
+</body>
+</html>
