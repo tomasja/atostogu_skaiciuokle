@@ -38,6 +38,13 @@
     .btn-pdf:hover   { background: #333; }
     .btn-excel { right: 11.5rem; background: #1d6f42; color: #fff; border-color: #1d6f42; }
     .btn-excel:hover { background: #155232; }
+    .btn-save  { right: 21rem;  background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+    .btn-save:hover  { background: #2c5282; }
+    .btn-open  { right: 29.5rem; background: #fff; color: #2b6cb0; border-color: #2b6cb0; }
+    .btn-open:hover  { background: #ebf4ff; }
+    .btn-clear { right: 37rem;  background: #fff; color: #c53030; border-color: #fca5a5; }
+    .btn-clear:hover { background: #fff5f5; }
+    #openFileInput { display: none; }
 
     h1 {
       font-size: 1.55rem;
@@ -346,8 +353,12 @@
 
 <header>
   <h1>🏖 Atostogų likučio skaičiuoklė</h1>
-  <button class="btn btn-excel" onclick="exportExcel()">⇩ Eksportuoti Excel</button>
-  <button class="btn btn-pdf" onclick="exportPDF()">⇩ Eksportuoti PDF</button>
+  <button class="btn btn-clear" onclick="clearAll()">🗑 Išvalyti</button>
+  <button class="btn btn-open"  onclick="document.getElementById('openFileInput').click()">📂 Atidaryti</button>
+  <button class="btn btn-save"  onclick="saveJSON()">💾 Išsaugoti</button>
+  <button class="btn btn-excel" onclick="exportExcel()">⇩ Excel</button>
+  <button class="btn btn-pdf"   onclick="exportPDF()">⇩ PDF</button>
+  <input type="file" id="openFileInput" accept=".json" onchange="loadJSON(this)" />
 </header>
 
 <!-- Darbuotojo duomenys -->
@@ -1090,6 +1101,8 @@ function renderSummary() {
       });
     }
   });
+
+  scheduleAutoSave();
 }
 
 function toggleYrDetail(rowId, btn) {
@@ -1476,18 +1489,102 @@ function exportPDF() {
   setTimeout(() => win.print(), 600);
 }
 
-// ── Init ───────────────────────────────────────────────────────────────────
+// ── Save / Load / Clear JSON ──────────────────────────────────────────────
+function collectState() {
+  return {
+    empTab:       $('empTab').value,
+    empName:      $('empName').value,
+    startDate:    $('startDate').value,
+    startBalDate: $('startBalDate').value,
+    startBalDays: $('startBalDays').value,
+    pre2010Extra: $('pre2010Extra').value,
+    pre2010Used:  $('pre2010Used').value,
+    norms,
+    entries,
+    nextId,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function applyState(s) {
+  $('empTab').value       = s.empTab       || '';
+  $('empName').value      = s.empName      || '';
+  $('startDate').value    = s.startDate    || '';
+  $('startBalDate').value = s.startBalDate || '';
+  $('startBalDays').value = s.startBalDays || '';
+  $('pre2010Extra').value = s.pre2010Extra || 0;
+  $('pre2010Used').value  = s.pre2010Used  || 0;
+  norms   = s.norms   || [];
+  entries = s.entries || [];
+  nextId  = s.nextId  || 1;
+
+  const fpSD = document.querySelector('#startDate')._flatpickr;
+  if (fpSD) fpSD.setDate(s.startDate || '', false);
+  const fpSB = document.querySelector('#startBalDate')._flatpickr;
+  if (fpSB) fpSB.setDate(s.startBalDate || '', false);
+
+  checkPre2010();
+  renderNorms();
+  renderEntries();
+  renderSummary();
+}
+
+function saveJSON() {
+  const state = collectState();
+  const blob  = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const name  = ($('empName').value || 'darbuotojas').replace(/\s+/g, '_');
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = `atostogos_${name}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      applyState(JSON.parse(e.target.result));
+    } catch {
+      alert('Klaida skaitant failą. Patikrinkite ar tai teisingas atostogų skaičiuoklės failas.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!confirm('Išvalyti visus formos duomenis? Neišsaugoti duomenys bus prarasti.')) return;
+  entries = []; norms = []; nextId = 1;
+  ['empTab','empName','startBalDate','startBalDays','pre2010Extra','pre2010Used'].forEach(id => { $(id).value = ''; });
+  const fpSD = document.querySelector('#startDate')._flatpickr;
+  if (fpSD) fpSD.clear(); else $('startDate').value = '';
+  const fpSB = document.querySelector('#startBalDate')._flatpickr;
+  if (fpSB) fpSB.clear();
+  const initDate = new Date();
+  initDate.setFullYear(initDate.getFullYear() - 1);
+  const d = fmtDate(initDate);
+  $('startDate').value = d;
+  if (fpSD) fpSD.setDate(d, false);
+  addNorm(d, 20, 'd.d.');
+  checkPre2010();
+  renderEntries();
+  renderSummary();
+}
+
+// placeholder so renderSummary scheduleAutoSave call doesn't throw
+function scheduleAutoSave() {}
+
+// ── Init ──────────────────────────────────────────────────────────────────
 const initDate = new Date();
 initDate.setFullYear(initDate.getFullYear() - 1);
-const initDateStr = fmtDate(initDate);
-
-// Set startDate value before flatpickr re-reads it
-$('startDate').value = initDateStr;
-
-// Add default norm
-addNorm(initDateStr, 20, 'd.d.');
+$('startDate').value = fmtDate(initDate);
+addNorm($('startDate').value, 20, 'd.d.');
 
 checkPre2010();
+renderNorms();
 renderEntries();
 renderSummary();
 </script>
