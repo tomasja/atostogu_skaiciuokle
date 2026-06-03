@@ -207,10 +207,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <label>Kortelės tipas</label>
     <select id="fCardType"><option value="">Visi</option></select>
   </div>
-  <div class="dup-toggle" onclick="document.getElementById('fDups').click()">
+  <label class="dup-toggle" for="fDups">
     <input type="checkbox" id="fDups" />
-    <label for="fDups">Tik dublikatai</label>
-  </div>
+    <span>Tik dublikatai</span>
+  </label>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
     <button class="btn btn-green btn-sm" onclick="exportCSV()">⬇ CSV</button>
     <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtruoti</button>
