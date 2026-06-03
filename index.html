@@ -21,30 +21,38 @@
 
     header {
       background: #fff;
-      padding: 2.5rem 1rem 2rem;
-      text-align: center;
+      padding: 1.25rem 1.5rem;
       border-bottom: 2px solid #FFDD00;
       margin-bottom: 2.5rem;
-      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    .btn-pdf, .btn-excel {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: .8rem;
+    header h1 { margin: 0; }
+
+    .header-btns {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
     }
-    .btn-pdf   { right: 1.25rem; background: #111; color: #fff; border-color: #111; }
+
+    .btn-pdf   { background: #111; color: #fff; border-color: #111; }
     .btn-pdf:hover   { background: #333; }
-    .btn-excel { right: 11.5rem; background: #1d6f42; color: #fff; border-color: #1d6f42; }
+    .btn-excel { background: #1d6f42; color: #fff; border-color: #1d6f42; }
     .btn-excel:hover { background: #155232; }
-    .btn-save  { right: 21rem;  background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+    .btn-save  { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
     .btn-save:hover  { background: #2c5282; }
-    .btn-open  { right: 29.5rem; background: #fff; color: #2b6cb0; border-color: #2b6cb0; }
+    .btn-open  { background: #fff; color: #2b6cb0; border-color: #2b6cb0; }
     .btn-open:hover  { background: #ebf4ff; }
-    .btn-clear { right: 37rem;  background: #fff; color: #c53030; border-color: #fca5a5; }
+    .btn-clear { background: #fff; color: #c53030; border-color: #fca5a5; }
     .btn-clear:hover { background: #fff5f5; }
     #openFileInput { display: none; }
+
+    .sep { width: 1px; height: 24px; background: #e2e8f0; margin: 0 .15rem; }
 
     h1 {
       font-size: 1.55rem;
@@ -353,12 +361,16 @@
 
 <header>
   <h1>🏖 Atostogų likučio skaičiuoklė</h1>
-  <button class="btn btn-clear" onclick="clearAll()">🗑 Išvalyti</button>
-  <button class="btn btn-open"  onclick="document.getElementById('openFileInput').click()">📂 Atidaryti</button>
-  <button class="btn btn-save"  onclick="saveJSON()">💾 Išsaugoti</button>
-  <button class="btn btn-excel" onclick="exportExcel()">⇩ Excel</button>
-  <button class="btn btn-pdf"   onclick="exportPDF()">⇩ PDF</button>
-  <input type="file" id="openFileInput" accept=".json" onchange="loadJSON(this)" />
+  <div class="header-btns">
+    <button class="btn btn-clear" onclick="clearAll()">🗑 Išvalyti</button>
+    <div class="sep"></div>
+    <button class="btn btn-open"  onclick="document.getElementById('openFileInput').click()">📂 Atidaryti</button>
+    <button class="btn btn-save"  onclick="saveJSON()">💾 Išsaugoti</button>
+    <div class="sep"></div>
+    <button class="btn btn-excel" onclick="exportExcel()">⇩ Excel</button>
+    <button class="btn btn-pdf"   onclick="exportPDF()">⇩ PDF</button>
+    <input type="file" id="openFileInput" accept=".json" onchange="loadJSON(this)" />
+  </div>
 </header>
 
 <!-- Darbuotojo duomenys -->
