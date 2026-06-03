@@ -99,6 +99,13 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     tbody tr.duplicate { background: #fff0f0; }
     tbody tr.duplicate:hover { background: #ffe5e5; }
     tbody td { padding: 8px 12px; white-space: nowrap; }
+    .col-date  { width: 95px;  min-width: 95px; }
+    .col-time  { width: 75px;  min-width: 75px; }
+    .col-fee   { width: 75px;  min-width: 75px; }
+    .col-terminal { width: 90px; min-width: 90px; }
+    .col-cardtype { max-width: 130px; }
+    .col-source { max-width: 160px; overflow: hidden; }
+    .col-source span { display: block; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 0.78rem; color: #666; cursor: help; }
     .badge { display: inline-block; padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
     .badge-dup { background: #fde8e8; color: #c0392b; border: 1px solid #f5c0c0; }
     .amount { font-weight: 600; text-align: right; }
@@ -564,16 +571,21 @@ function renderTable() {
   }
   tbody.innerHTML=page.map(t=>{
     const dup=t.isDuplicate?`<span class="badge badge-dup">⚠ Dublikatas</span>`:'';
-    const src=t.source.split('/').slice(-3).join('/');
+    const src=t.source.split('/').slice(-2).join('/');
+    const fullSrc=t.source;
     return `<tr class="${t.isDuplicate?'duplicate':''}">
-      <td>${t.origDate}</td><td>${t.origTime}</td><td>${t.postedDate}</td>
-      <td><code>${t.card}</code></td><td><small>${t.cardType}</small></td>
+      <td class="col-date">${t.origDate}</td>
+      <td class="col-time">${t.origTime}</td>
+      <td class="col-date">${t.postedDate}</td>
+      <td><code>${t.card}</code></td>
+      <td class="col-cardtype"><small>${t.cardType}</small></td>
       <td class="amount positive">${fmt(t.amount)} ${t.currency}</td>
-      <td class="amount">${fmt(t.fee)}</td>
-      <td><code>${t.authCode}</code></td><td><code>${t.rrn}</code></td>
-      <td>${t.terminal}</td>
+      <td class="amount col-fee">${fmt(t.fee)}</td>
+      <td><code>${t.authCode}</code></td>
+      <td><code>${t.rrn}</code></td>
+      <td class="col-terminal">${t.terminal}</td>
       <td>${t.merchantName}<br><small style="color:#888">${t.merchantCity}</small></td>
-      <td><small style="color:#666;white-space:normal;max-width:180px;display:block">${src}</small></td>
+      <td class="col-source"><span title="${fullSrc}">${src}</span></td>
       <td>${dup}</td></tr>`;
   }).join('');
   renderPagination();
