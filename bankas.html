@@ -251,11 +251,11 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 </header>
 
 <div class="load-area">
-  <div class="load-card folder-card" id="folderCard" onclick="selectFolder()">
+  <div class="load-card folder-card" id="folderCard" onclick="document.getElementById('folderInput').click()">
     <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"/></svg>
     <strong>Pasirinkti ataskaitų katalogą</strong>
     <p>Automatiškai nuskaitys visus ZIP failus aplankuose<br><em>metai → mėnuo → failai</em></p>
-    <span class="badge-api" id="fsApiStatus">Tikrinama...</span>
+    <input type="file" id="folderInput" webkitdirectory multiple accept=".zip" style="display:none" />
   </div>
   <div class="load-card files-card" id="dropZone">
     <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.54 15.96.5 13.5.5c-1.42 0-2.67.67-3.5 1.71C9.17 1.17 7.92.5 6.5.5 4.04.5 2 2.54 2 4.67c0 .45.11.89.18 1.33H0v14h24V6h-4zm-7.5 12H11v-5.5H7l5-6 5 6h-4V18zm7.5-8h-4.82l1.24-3H20v3zm-14 0H2v-3h5.08l1.24 3H6z"/></svg>
@@ -379,15 +379,22 @@ let sortDir = 1;
 let currentPage = 1;
 let pageSize = 50;
 
-// Check File System Access API support
-const hasFSAPI = 'showDirectoryPicker' in window;
-document.getElementById('fsApiStatus').textContent = hasFSAPI ? 'Palaikoma šioje naršyklėje' : 'Nepalaiko Firefox — naudokite Chrome/Edge';
-document.getElementById('fsApiStatus').className = 'badge-api' + (hasFSAPI ? '' : ' no');
-if (!hasFSAPI) {
-  document.getElementById('folderCard').style.opacity = '0.6';
-  document.getElementById('folderCard').style.cursor = 'default';
-  document.getElementById('folderCard').onclick = () => alert('Katalogo nuskaitymas reikalauja Chrome arba Edge naršyklės.');
-}
+// Folder input (webkitdirectory - works from file:// in all browsers)
+document.getElementById('folderInput').addEventListener('change', async function() {
+  const files = [...this.files].filter(f => f.name.toLowerCase().endsWith('.zip'));
+  if (files.length === 0) { alert('Kataloge nerasta ZIP failų.'); return; }
+  showProgress(true);
+  for (let i = 0; i < files.length; i++) {
+    const f = files[i];
+    setProgress(i / files.length, `Nuskaitoma: ${f.webkitRelativePath} (${i+1}/${files.length})`);
+    await processZipFile(f, f.webkitRelativePath || f.name);
+  }
+  setProgress(1, `Baigta — įkelta ${files.length} failų`);
+  setTimeout(() => showProgress(false), 1500);
+  markDuplicates();
+  updateUI();
+  this.value = '';
+});
 
 // Drag & drop
 const dropZone = document.getElementById('dropZone');
@@ -401,52 +408,6 @@ dropZone.addEventListener('drop', e => {
   handleFileObjects([...e.dataTransfer.files]);
 });
 fileInput.addEventListener('change', () => handleFileObjects([...fileInput.files]));
-
-// ── Folder scanning via File System Access API ──────────────────────────────
-
-async function selectFolder() {
-  if (!hasFSAPI) return;
-  let dirHandle;
-  try {
-    dirHandle = await window.showDirectoryPicker({ mode: 'read' });
-  } catch(e) {
-    return; // user cancelled
-  }
-
-  // collect all zip FileHandles recursively
-  const zipHandles = [];
-  await collectZips(dirHandle, zipHandles);
-
-  if (zipHandles.length === 0) {
-    alert('Kataloge nerasta ZIP failų.');
-    return;
-  }
-
-  showProgress(true);
-  let done = 0;
-  for (const { handle, path } of zipHandles) {
-    setProgress(done / zipHandles.length, `Nuskaitoma: ${path} (${done + 1}/${zipHandles.length})`);
-    const file = await handle.getFile();
-    await processZipFile(file, path);
-    done++;
-  }
-  setProgress(1, `Baigta — įkelta ${done} failų`);
-  setTimeout(() => showProgress(false), 1500);
-
-  markDuplicates();
-  updateUI();
-}
-
-async function collectZips(dirHandle, result, pathPrefix) {
-  const prefix = pathPrefix ? pathPrefix + '/' + dirHandle.name : dirHandle.name;
-  for await (const [name, handle] of dirHandle) {
-    if (handle.kind === 'directory') {
-      await collectZips(handle, result, prefix);
-    } else if (handle.kind === 'file' && name.toLowerCase().endsWith('.zip')) {
-      result.push({ handle, path: prefix + '/' + name });
-    }
-  }
-}
 
 // ── Individual file handling ────────────────────────────────────────────────
 
