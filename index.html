@@ -217,6 +217,34 @@
 
     .import-status.error { background: #fff5f5; border-color: #fca5a5; color: #c53030; }
 
+    /* ── Flatpickr font & style overrides ── */
+    .flatpickr-calendar,
+    .flatpickr-calendar * {
+      font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif !important;
+    }
+    .flatpickr-months .flatpickr-month,
+    .flatpickr-current-month,
+    .flatpickr-weekday,
+    .flatpickr-day {
+      font-family: 'Poppins', 'Segoe UI', system-ui, sans-serif !important;
+    }
+    .flatpickr-day.selected,
+    .flatpickr-day.selected:hover {
+      background: #111;
+      border-color: #111;
+    }
+    .flatpickr-day:hover {
+      background: #fffce8;
+      border-color: #FFDD00;
+    }
+    .flatpickr-day.today {
+      border-color: #FFDD00;
+    }
+    .flatpickr-months .flatpickr-prev-month:hover svg,
+    .flatpickr-months .flatpickr-next-month:hover svg {
+      fill: #111;
+    }
+
     /* ── Summary ── */
     .summary-grid {
       display: grid;
@@ -762,8 +790,21 @@ function formatDate(val) {
 const FP_CONFIG = {
   locale: 'lt',
   dateFormat: 'Y-m-d',
-  allowInput: true
+  allowInput: true,
+  onReady(_sel, _str, fp) {
+    // Navigate calendar in real-time as user types a valid date
+    fp.altInput ? fp.altInput.addEventListener('input', () => liveJump(fp))
+                : fp.input.addEventListener('input', () => liveJump(fp));
+  }
 };
+
+function liveJump(fp) {
+  const raw = fp.input.value.trim();
+  // Accept YYYY-MM-DD or YYYY-M-D
+  if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) return;
+  const d = new Date(raw);
+  if (!isNaN(d)) fp.jumpToDate(d);
+}
 
 flatpickr('#startDate', {
   ...FP_CONFIG,
