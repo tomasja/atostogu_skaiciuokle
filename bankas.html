@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="lt">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Banko įmokų peržiūra</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: #f0f2f5;
+      color: #1a1a2e;
+      min-height: 100vh;
+    }
+
+    header {
+      background: #1a3a5c;
+      color: white;
+      padding: 16px 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+    }
+    header h1 { font-size: 1.25rem; font-weight: 600; }
+    header span { font-size: 0.85rem; opacity: 0.7; margin-left: auto; }
+
+    .load-area {
+      margin: 24px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 700px) { .load-area { grid-template-columns: 1fr; } }
+
+    .load-card {
+      border: 2px dashed #4a90d9;
+      border-radius: 12px;
+      background: white;
+      padding: 32px 24px;
+      text-align: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s;
+    }
+    .load-card:hover, .load-card.dragover { background: #e8f4ff; border-color: #1a3a5c; }
+    .load-card.folder-card { border-color: #2e7d32; }
+    .load-card.folder-card:hover { background: #f1f8f1; border-color: #1b5e20; }
+    .load-card svg { width: 40px; height: 40px; margin-bottom: 10px; }
+    .load-card.folder-card svg { fill: #2e7d32; }
+    .load-card.files-card svg { fill: #4a90d9; }
+    .load-card strong { display: block; font-size: 0.95rem; color: #1a3a5c; margin-bottom: 4px; }
+    .load-card.folder-card strong { color: #2e7d32; }
+    .load-card p { color: #777; font-size: 0.82rem; line-height: 1.4; }
+    .load-card .badge-api { display: inline-block; margin-top: 8px; background: #e8f5e9; color: #2e7d32; border-radius: 10px; padding: 2px 8px; font-size: 0.72rem; font-weight: 600; }
+    .load-card .badge-api.no { background: #fff3e0; color: #e65100; }
+    #fileInput { display: none; }
+
+    .progress-wrap {
+      margin: 0 24px 16px;
+      background: white;
+      border-radius: 8px;
+      padding: 14px 18px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: none;
+    }
+    .progress-wrap.visible { display: block; }
+    .progress-label { font-size: 0.85rem; color: #444; margin-bottom: 8px; }
+    .progress-bar-outer { background: #e0e7ef; border-radius: 4px; height: 8px; overflow: hidden; }
+    .progress-bar-inner { background: #1a3a5c; height: 100%; border-radius: 4px; transition: width 0.15s; width: 0%; }
+
+    .stats-bar {
+      display: flex;
+      gap: 12px;
+      margin: 0 24px 16px;
+      flex-wrap: wrap;
+    }
+    .stat-card {
+      background: white;
+      border-radius: 8px;
+      padding: 12px 20px;
+      flex: 1;
+      min-width: 130px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      border-left: 4px solid #4a90d9;
+    }
+    .stat-card.dup { border-left-color: #e05c5c; }
+    .stat-card label { font-size: 0.72rem; color: #888; text-transform: uppercase; letter-spacing: 0.05em; display: block; margin-bottom: 4px; }
+    .stat-card .val { font-size: 1.35rem; font-weight: 700; color: #1a3a5c; }
+
+    .filters {
+      background: white;
+      margin: 0 24px 16px;
+      padding: 16px;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+    }
+    .filter-group { display: flex; flex-direction: column; gap: 4px; }
+    .filter-group label { font-size: 0.75rem; color: #666; font-weight: 600; }
+    .filters input, .filters select {
+      border: 1px solid #d0d7de;
+      border-radius: 6px;
+      padding: 7px 10px;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.15s;
+      min-width: 130px;
+    }
+    .filters input:focus, .filters select:focus { border-color: #4a90d9; }
+    .btn {
+      padding: 7px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: opacity 0.15s;
+    }
+    .btn:hover { opacity: 0.85; }
+    .btn-primary { background: #1a3a5c; color: white; }
+    .btn-sm { padding: 5px 12px; font-size: 0.8rem; }
+    .btn-success { background: #2e7d32; color: white; }
+    .btn-clear { background: #eee; color: #333; }
+    .btn-danger { background: #c62828; color: white; }
+
+    .dup-toggle {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: #fff5f5;
+      border: 1px solid #f5c0c0;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      user-select: none;
+    }
+    .dup-toggle input { cursor: pointer; }
+    .dup-toggle label { font-size: 0.85rem; color: #c0392b; font-weight: 600; cursor: pointer; }
+
+    .loaded-summary {
+      margin: 0 24px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      font-size: 0.82rem;
+      color: #555;
+    }
+    .loaded-summary .clear-all { cursor: pointer; color: #c62828; font-weight: 600; text-decoration: underline; }
+
+    .table-wrap {
+      margin: 0 24px 24px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+      overflow: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+    }
+    thead th {
+      background: #1a3a5c;
+      color: white;
+      padding: 10px 12px;
+      text-align: left;
+      white-space: nowrap;
+      position: sticky;
+      top: 0;
+      cursor: pointer;
+      user-select: none;
+    }
+    thead th:hover { background: #25507a; }
+    thead th .sort-icon { opacity: 0.5; margin-left: 4px; }
+    thead th.sorted .sort-icon { opacity: 1; }
+
+    tbody tr { border-bottom: 1px solid #eef0f3; transition: background 0.1s; }
+    tbody tr:hover { background: #f5f8ff; }
+    tbody tr.duplicate { background: #fff0f0; }
+    tbody tr.duplicate:hover { background: #ffe5e5; }
+    tbody td { padding: 8px 12px; white-space: nowrap; }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 600;
+    }
+    .badge-dup { background: #fde8e8; color: #c0392b; border: 1px solid #f5c0c0; }
+
+    .amount { font-weight: 600; text-align: right; }
+    .amount.positive { color: #2e7d32; }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 20px;
+      color: #888;
+    }
+    .empty-state svg { width: 64px; height: 64px; fill: #ccc; margin-bottom: 16px; }
+
+    .pagination {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 16px;
+      border-top: 1px solid #eef0f3;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+    }
+    .pagination span { font-size: 0.85rem; color: #666; }
+    .page-btn {
+      padding: 4px 10px;
+      border: 1px solid #d0d7de;
+      background: white;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.85rem;
+    }
+    .page-btn:hover { background: #f0f2f5; }
+    .page-btn.active { background: #1a3a5c; color: white; border-color: #1a3a5c; }
+    .page-btn:disabled { opacity: 0.4; cursor: default; }
+    select#pageSize { min-width: 80px; }
+  </style>
+</head>
+<body>
+
+<header>
+  <svg viewBox="0 0 24 24" style="width:28px;height:28px;fill:white"><path d="M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z"/></svg>
+  <h1>Banko kortele surinktų įmokų peržiūra</h1>
+  <span id="headerInfo"></span>
+</header>
+
+<div class="load-area">
+  <div class="load-card folder-card" id="folderCard" onclick="selectFolder()">
+    <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"/></svg>
+    <strong>Pasirinkti ataskaitų katalogą</strong>
+    <p>Automatiškai nuskaitys visus ZIP failus aplankuose<br><em>metai → mėnuo → failai</em></p>
+    <span class="badge-api" id="fsApiStatus">Tikrinama...</span>
+  </div>
+  <div class="load-card files-card" id="dropZone">
+    <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.54 15.96.5 13.5.5c-1.42 0-2.67.67-3.5 1.71C9.17 1.17 7.92.5 6.5.5 4.04.5 2 2.54 2 4.67c0 .45.11.89.18 1.33H0v14h24V6h-4zm-7.5 12H11v-5.5H7l5-6 5 6h-4V18zm7.5-8h-4.82l1.24-3H20v3zm-14 0H2v-3h5.08l1.24 3H6z"/></svg>
+    <strong>Vilkite ZIP failus arba spustelėkite</strong>
+    <p>Galima įkelti kelis failus vienu metu.<br>Tinka kai norite peržiūrėti tik konkrečias dienas.</p>
+    <input type="file" id="fileInput" accept=".zip" multiple />
+  </div>
+</div>
+
+<div class="progress-wrap" id="progressWrap">
+  <div class="progress-label" id="progressLabel">Nuskaitoma...</div>
+  <div class="progress-bar-outer"><div class="progress-bar-inner" id="progressBar"></div></div>
+</div>
+
+<div class="loaded-summary" id="loadedSummary" style="display:none">
+  <span id="loadedText"></span>
+  <span class="clear-all" onclick="clearAll()">✕ Išvalyti viską</span>
+</div>
+
+<div class="stats-bar" id="statsBar" style="display:none">
+  <div class="stat-card">
+    <label>Failų įkelta</label>
+    <div class="val" id="statFiles">0</div>
+  </div>
+  <div class="stat-card">
+    <label>Operacijų iš viso</label>
+    <div class="val" id="statTotal">0</div>
+  </div>
+  <div class="stat-card">
+    <label>Bendra suma</label>
+    <div class="val" id="statSum">0.00 €</div>
+  </div>
+  <div class="stat-card dup">
+    <label>Galimi dublikatai</label>
+    <div class="val" id="statDups">0</div>
+  </div>
+  <div class="stat-card">
+    <label>Rodomos eilutės</label>
+    <div class="val" id="statVisible">0</div>
+  </div>
+</div>
+
+<div class="filters" id="filtersBar" style="display:none">
+  <div class="filter-group">
+    <label>Paieška (kortelė / RRN / aut. kodas)</label>
+    <input type="text" id="fSearch" placeholder="pvz. *2852 arba 001128..." />
+  </div>
+  <div class="filter-group">
+    <label>Metai</label>
+    <select id="fYear"><option value="">Visi</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Mėnuo</label>
+    <select id="fMonth"><option value="">Visi</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Suma nuo (€)</label>
+    <input type="number" id="fAmtMin" placeholder="0.00" step="0.01" />
+  </div>
+  <div class="filter-group">
+    <label>Suma iki (€)</label>
+    <input type="number" id="fAmtMax" placeholder="9999.99" step="0.01" />
+  </div>
+  <div class="filter-group">
+    <label>Data nuo</label>
+    <input type="date" id="fDateFrom" />
+  </div>
+  <div class="filter-group">
+    <label>Data iki</label>
+    <input type="date" id="fDateTo" />
+  </div>
+  <div class="filter-group">
+    <label>Terminalas</label>
+    <select id="fTerminal"><option value="">Visi</option></select>
+  </div>
+  <div class="filter-group">
+    <label>Kortelės tipas</label>
+    <select id="fCardType"><option value="">Visi</option></select>
+  </div>
+  <div class="dup-toggle" onclick="document.getElementById('fDups').click()">
+    <input type="checkbox" id="fDups" />
+    <label for="fDups">Tik dublikatai</label>
+  </div>
+  <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
+    <button class="btn btn-success btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtruoti</button>
+    <button class="btn btn-clear btn-sm" onclick="clearFilters()">Išvalyti</button>
+  </div>
+</div>
+
+<div class="table-wrap" id="tableWrap" style="display:none">
+  <table id="mainTable">
+    <thead>
+      <tr>
+        <th onclick="sortBy('origDate')" data-col="origDate">Operacijos data <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('origTime')" data-col="origTime">Laikas <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('postedDate')" data-col="postedDate">Apdorojimo data <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('card')" data-col="card">Kortelė <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('cardType')" data-col="cardType">Kortelės tipas <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('amount')" data-col="amount">Suma <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('fee')" data-col="fee">Komisinis <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('authCode')" data-col="authCode">Aut. kodas <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('rrn')" data-col="rrn">RRN <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('terminal')" data-col="terminal">Terminalas <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('merchantName')" data-col="merchantName">Prekybos vieta <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('source')" data-col="source">Failas <span class="sort-icon">↕</span></th>
+        <th>Pastaba</th>
+      </tr>
+    </thead>
+    <tbody id="tableBody"></tbody>
+  </table>
+  <div class="pagination" id="pagination"></div>
+</div>
+
+<script>
+let allTransactions = [];
+let filtered = [];
+let loadedFileNames = [];
+let sortCol = 'origDate';
+let sortDir = 1;
+let currentPage = 1;
+let pageSize = 50;
+
+// Check File System Access API support
+const hasFSAPI = 'showDirectoryPicker' in window;
+document.getElementById('fsApiStatus').textContent = hasFSAPI ? 'Palaikoma šioje naršyklėje' : 'Nepalaiko Firefox — naudokite Chrome/Edge';
+document.getElementById('fsApiStatus').className = 'badge-api' + (hasFSAPI ? '' : ' no');
+if (!hasFSAPI) {
+  document.getElementById('folderCard').style.opacity = '0.6';
+  document.getElementById('folderCard').style.cursor = 'default';
+  document.getElementById('folderCard').onclick = () => alert('Katalogo nuskaitymas reikalauja Chrome arba Edge naršyklės.');
+}
+
+// Drag & drop
+const dropZone = document.getElementById('dropZone');
+const fileInput = document.getElementById('fileInput');
+dropZone.addEventListener('click', () => fileInput.click());
+dropZone.addEventListener('dragover', e => { e.preventDefault(); dropZone.classList.add('dragover'); });
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', e => {
+  e.preventDefault();
+  dropZone.classList.remove('dragover');
+  handleFileObjects([...e.dataTransfer.files]);
+});
+fileInput.addEventListener('change', () => handleFileObjects([...fileInput.files]));
+
+// ── Folder scanning via File System Access API ──────────────────────────────
+
+async function selectFolder() {
+  if (!hasFSAPI) return;
+  let dirHandle;
+  try {
+    dirHandle = await window.showDirectoryPicker({ mode: 'read' });
+  } catch(e) {
+    return; // user cancelled
+  }
+
+  // collect all zip FileHandles recursively
+  const zipHandles = [];
+  await collectZips(dirHandle, zipHandles);
+
+  if (zipHandles.length === 0) {
+    alert('Kataloge nerasta ZIP failų.');
+    return;
+  }
+
+  showProgress(true);
+  let done = 0;
+  for (const { handle, path } of zipHandles) {
+    setProgress(done / zipHandles.length, `Nuskaitoma: ${path} (${done + 1}/${zipHandles.length})`);
+    const file = await handle.getFile();
+    await processZipFile(file, path);
+    done++;
+  }
+  setProgress(1, `Baigta — įkelta ${done} failų`);
+  setTimeout(() => showProgress(false), 1500);
+
+  markDuplicates();
+  updateUI();
+}
+
+async function collectZips(dirHandle, result, pathPrefix) {
+  const prefix = pathPrefix ? pathPrefix + '/' + dirHandle.name : dirHandle.name;
+  for await (const [name, handle] of dirHandle) {
+    if (handle.kind === 'directory') {
+      await collectZips(handle, result, prefix);
+    } else if (handle.kind === 'file' && name.toLowerCase().endsWith('.zip')) {
+      result.push({ handle, path: prefix + '/' + name });
+    }
+  }
+}
+
+// ── Individual file handling ────────────────────────────────────────────────
+
+async function handleFileObjects(files) {
+  showProgress(true);
+  let done = 0;
+  for (const file of files) {
+    if (!file.name.endsWith('.zip')) continue;
+    setProgress(done / files.length, `Nuskaitoma: ${file.name}`);
+    await processZipFile(file, file.name);
+    done++;
+  }
+  showProgress(false);
+  markDuplicates();
+  updateUI();
+}
+
+async function processZipFile(file, sourcePath) {
+  if (loadedFileNames.includes(sourcePath)) return;
+  try {
+    const zip = await JSZip.loadAsync(file);
+    let parsed = false;
+    for (const [name, zipEntry] of Object.entries(zip.files)) {
+      if (name.toLowerCase().endsWith('.xml')) {
+        const text = await zipEntry.async('text');
+        const txns = parseXML(text, sourcePath);
+        allTransactions.push(...txns);
+        parsed = true;
+      }
+    }
+    if (parsed) loadedFileNames.push(sourcePath);
+  } catch(e) {
+    console.warn('Klaida skaitant failą:', sourcePath, e.message);
+  }
+}
+
+// ── XML parsing ─────────────────────────────────────────────────────────────
+
+function parseXML(xmlText, sourceName) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+  const results = [];
+
+  doc.querySelectorAll('DepAcctStmtRec').forEach(stmtRec => {
+    const merchantEl = stmtRec.querySelector('MerchantData');
+    const merchantId   = merchantEl?.querySelector('ID')?.textContent?.trim() || '';
+    const merchantName = merchantEl?.querySelector('Name')?.textContent?.trim() || '';
+    const merchantCity = merchantEl?.querySelector('City')?.textContent?.trim() || '';
+
+    stmtRec.querySelectorAll('DepAcctTrnRec').forEach(trnRec => {
+      const ba = trnRec.querySelector('BankAcctTrnRec');
+      if (!ba) return;
+
+      const trnType  = ba.querySelector('TrnType')?.textContent?.trim() || '';
+      const cardType = ba.querySelector('CardType')?.textContent?.trim() || '';
+
+      const pY = ba.querySelector('PostedDt > Year')?.textContent?.trim() || '';
+      const pM = ba.querySelector('PostedDt > Month')?.textContent?.trim() || '';
+      const pD = ba.querySelector('PostedDt > Day')?.textContent?.trim() || '';
+      const postedDate = pY ? `${pY}-${pM.padStart(2,'0')}-${pD.padStart(2,'0')}` : '';
+
+      const oY = ba.querySelector('OrigDt > Year')?.textContent?.trim() || '';
+      const oM = ba.querySelector('OrigDt > Month')?.textContent?.trim() || '';
+      const oD = ba.querySelector('OrigDt > Day')?.textContent?.trim() || '';
+      const origTime = ba.querySelector('OrigDt > Time')?.textContent?.trim() || '';
+      const origDate = oY ? `${oY}-${oM.padStart(2,'0')}-${oD.padStart(2,'0')}` : '';
+
+      const amount   = parseFloat(ba.querySelector('CurAmt > Amt')?.textContent?.trim() || '0');
+      const currency = ba.querySelector('CurAmt > CurrCode')?.textContent?.trim() || 'EUR';
+
+      let fee = 0;
+      ba.querySelectorAll('CompositeCurAmt').forEach(c => {
+        if (c.querySelector('CompositeCurAmtType')?.textContent?.trim() === 'TransactionFee')
+          fee = parseFloat(c.querySelector('Amt')?.textContent?.trim() || '0');
+      });
+
+      const card     = ba.querySelector('CardAcctId > AcctId')?.textContent?.trim() || '';
+      const authCode = trnRec.querySelector('XferId')?.textContent?.trim() || '';
+      const rrn      = trnRec.querySelector('XferComment')?.textContent?.trim() || '';
+
+      results.push({
+        origDate, origTime, postedDate,
+        card, cardType, trnType,
+        amount, currency, fee,
+        authCode, rrn,
+        terminal: merchantId, merchantName, merchantCity,
+        source: sourceName,
+        year: oY, month: oM,
+        isDuplicate: false, dupKey: ''
+      });
+    });
+  });
+  return results;
+}
+
+// ── Duplicate detection ──────────────────────────────────────────────────────
+
+function markDuplicates() {
+  const groups = {};
+  allTransactions.forEach((t, i) => {
+    const key = `${t.card}|${t.amount}|${t.origDate}|${t.origTime}`;
+    (groups[key] = groups[key] || []).push(i);
+  });
+  allTransactions.forEach(t => { t.isDuplicate = false; t.dupKey = ''; });
+  Object.entries(groups).forEach(([key, idx]) => {
+    if (idx.length > 1) idx.forEach(i => { allTransactions[i].isDuplicate = true; allTransactions[i].dupKey = key; });
+  });
+}
+
+// ── UI ───────────────────────────────────────────────────────────────────────
+
+function showProgress(on) {
+  document.getElementById('progressWrap').className = 'progress-wrap' + (on ? ' visible' : '');
+  if (!on) { setProgress(0, ''); }
+}
+function setProgress(frac, label) {
+  document.getElementById('progressBar').style.width = (frac * 100) + '%';
+  document.getElementById('progressLabel').textContent = label;
+}
+
+function updateUI() {
+  const hasTxns = allTransactions.length > 0;
+  document.getElementById('statsBar').style.display    = hasTxns ? 'flex'  : 'none';
+  document.getElementById('filtersBar').style.display  = hasTxns ? 'flex'  : 'none';
+  document.getElementById('tableWrap').style.display   = hasTxns ? 'block' : 'none';
+  document.getElementById('loadedSummary').style.display = hasTxns ? 'flex' : 'none';
+
+  const years    = [...new Set(allTransactions.map(t => t.year).filter(Boolean))].sort();
+  const months   = [...new Set(allTransactions.map(t => t.month).filter(Boolean))].sort((a,b) => +a - +b);
+  const terminals = [...new Set(allTransactions.map(t => t.terminal).filter(Boolean))].sort();
+  const cardTypes = [...new Set(allTransactions.map(t => t.cardType).filter(Boolean))].sort();
+
+  const monthNames = ['','Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
+
+  fillSelect('fYear',     years,     v => v,  v => v);
+  fillSelect('fMonth',    months,    v => v,  v => `${v} – ${monthNames[+v] || v}`);
+  fillSelect('fTerminal', terminals, v => v,  v => v);
+  fillSelect('fCardType', cardTypes, v => v,  v => v);
+
+  document.getElementById('loadedText').textContent =
+    `Įkelta ${loadedFileNames.length} failų, ${allTransactions.length} operacijų`;
+
+  applyFilters();
+}
+
+function fillSelect(id, values, valFn, labelFn) {
+  const sel = document.getElementById(id);
+  const cur = sel.value;
+  sel.innerHTML = `<option value="">Visi</option>` +
+    values.map(v => `<option value="${valFn(v)}">${labelFn(v)}</option>`).join('');
+  sel.value = cur;
+}
+
+function clearAll() {
+  allTransactions = [];
+  loadedFileNames = [];
+  markDuplicates();
+  updateUI();
+  document.getElementById('statsBar').style.display = 'none';
+  document.getElementById('filtersBar').style.display = 'none';
+  document.getElementById('tableWrap').style.display = 'none';
+  document.getElementById('loadedSummary').style.display = 'none';
+  document.getElementById('headerInfo').textContent = '';
+}
+
+function applyFilters() {
+  const search   = document.getElementById('fSearch').value.trim().toLowerCase();
+  const amtMin   = parseFloat(document.getElementById('fAmtMin').value) || -Infinity;
+  const amtMax   = parseFloat(document.getElementById('fAmtMax').value) || Infinity;
+  const dateFrom = document.getElementById('fDateFrom').value;
+  const dateTo   = document.getElementById('fDateTo').value;
+  const year     = document.getElementById('fYear').value;
+  const month    = document.getElementById('fMonth').value;
+  const terminal = document.getElementById('fTerminal').value;
+  const cardType = document.getElementById('fCardType').value;
+  const onlyDups = document.getElementById('fDups').checked;
+
+  filtered = allTransactions.filter(t => {
+    if (search && ![t.card, t.rrn, t.authCode, t.merchantName].some(f => f.toLowerCase().includes(search))) return false;
+    if (t.amount < amtMin || t.amount > amtMax) return false;
+    if (dateFrom && t.origDate < dateFrom) return false;
+    if (dateTo   && t.origDate > dateTo)   return false;
+    if (year     && t.year     !== year)     return false;
+    if (month    && t.month    !== month)    return false;
+    if (terminal && t.terminal !== terminal) return false;
+    if (cardType && t.cardType !== cardType) return false;
+    if (onlyDups && !t.isDuplicate)          return false;
+    return true;
+  });
+
+  sortFiltered();
+  updateStats();
+  currentPage = 1;
+  renderTable();
+}
+
+function clearFilters() {
+  ['fSearch','fAmtMin','fAmtMax','fDateFrom','fDateTo'].forEach(id => document.getElementById(id).value = '');
+  ['fYear','fMonth','fTerminal','fCardType'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('fDups').checked = false;
+  applyFilters();
+}
+
+function sortBy(col) {
+  if (sortCol === col) sortDir *= -1; else { sortCol = col; sortDir = 1; }
+  document.querySelectorAll('thead th').forEach(th => th.classList.remove('sorted'));
+  document.querySelector(`[data-col="${col}"]`)?.classList.add('sorted');
+  sortFiltered();
+  renderTable();
+}
+
+function sortFiltered() {
+  filtered.sort((a, b) => {
+    let va = a[sortCol] ?? '', vb = b[sortCol] ?? '';
+    if (sortCol === 'amount' || sortCol === 'fee') { va = +va; vb = +vb; }
+    if (va < vb) return -sortDir;
+    if (va > vb) return  sortDir;
+    return 0;
+  });
+}
+
+function updateStats() {
+  const dups = new Set(allTransactions.filter(t => t.isDuplicate).map(t => t.dupKey));
+  document.getElementById('statFiles').textContent   = loadedFileNames.length;
+  document.getElementById('statTotal').textContent   = allTransactions.length;
+  document.getElementById('statSum').textContent     = fmt(allTransactions.reduce((s,t) => s + t.amount, 0)) + ' €';
+  document.getElementById('statDups').textContent    = dups.size > 0
+    ? `${allTransactions.filter(t=>t.isDuplicate).length} (${dups.size} gr.)` : '0';
+  document.getElementById('statVisible').textContent = filtered.length;
+  document.getElementById('headerInfo').textContent  =
+    loadedFileNames.length ? `${loadedFileNames.length} failas(-ų) | ${allTransactions.length} operacija(-ų)` : '';
+}
+
+function renderTable() {
+  const tbody = document.getElementById('tableBody');
+  const start = (currentPage - 1) * pageSize;
+  const page  = filtered.slice(start, start + pageSize);
+
+  if (page.length === 0) {
+    tbody.innerHTML = `<tr><td colspan="13"><div class="empty-state">
+      <svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg>
+      <p>Nėra operacijų pagal pasirinktus filtrus</p></div></td></tr>`;
+    renderPagination();
+    return;
+  }
+
+  tbody.innerHTML = page.map(t => {
+    const dupBadge = t.isDuplicate ? `<span class="badge badge-dup">⚠ Dublikatas</span>` : '';
+    // Show only the last portion of the path (year/month/filename)
+    const shortSource = t.source.split('/').slice(-3).join('/');
+    return `<tr class="${t.isDuplicate ? 'duplicate' : ''}">
+      <td>${t.origDate}</td>
+      <td>${t.origTime}</td>
+      <td>${t.postedDate}</td>
+      <td><code>${t.card}</code></td>
+      <td><small>${t.cardType}</small></td>
+      <td class="amount positive">${fmt(t.amount)} ${t.currency}</td>
+      <td class="amount">${fmt(t.fee)}</td>
+      <td><code>${t.authCode}</code></td>
+      <td><code>${t.rrn}</code></td>
+      <td>${t.terminal}</td>
+      <td>${t.merchantName}<br><small style="color:#888">${t.merchantCity}</small></td>
+      <td><small style="color:#666;white-space:normal;max-width:200px;display:block">${shortSource}</small></td>
+      <td>${dupBadge}</td>
+    </tr>`;
+  }).join('');
+
+  renderPagination();
+}
+
+function renderPagination() {
+  const total = filtered.length;
+  const pages = Math.ceil(total / pageSize);
+  const pag   = document.getElementById('pagination');
+  if (pages <= 1) { pag.innerHTML = ''; return; }
+
+  let html = `<span>Iš viso: ${total} | Puslapis ${currentPage} iš ${pages}</span>`;
+  html += `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹</button>`;
+
+  const range = [];
+  for (let i = Math.max(1, currentPage-2); i <= Math.min(pages, currentPage+2); i++) range.push(i);
+  if (range[0] > 1) { html += `<button class="page-btn" onclick="goPage(1)">1</button>`; if(range[0]>2) html += `<span>…</span>`; }
+  range.forEach(p => html += `<button class="page-btn ${p===currentPage?'active':''}" onclick="goPage(${p})">${p}</button>`);
+  if (range[range.length-1] < pages) { if(range[range.length-1]<pages-1) html += `<span>…</span>`; html += `<button class="page-btn" onclick="goPage(${pages})">${pages}</button>`; }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>›</button>`;
+  html += `<select class="page-btn" id="pageSize" onchange="changePageSize(this.value)">
+    <option value="25" ${pageSize===25?'selected':''}>25</option>
+    <option value="50" ${pageSize===50?'selected':''}>50</option>
+    <option value="100" ${pageSize===100?'selected':''}>100</option>
+    <option value="200" ${pageSize===200?'selected':''}>200</option>
+  </select>`;
+  pag.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filtered.length / pageSize);
+  if (p < 1 || p > pages) return;
+  currentPage = p;
+  renderTable();
+}
+
+function changePageSize(val) {
+  pageSize = parseInt(val);
+  currentPage = 1;
+  renderTable();
+}
+
+function fmt(n) {
+  return Number(n).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
+function exportCSV() {
+  const cols    = ['origDate','origTime','postedDate','card','cardType','amount','currency','fee','authCode','rrn','terminal','merchantName','merchantCity','source','isDuplicate'];
+  const headers = ['Operacijos data','Laikas','Apdorojimo data','Kortelė','Kortelės tipas','Suma','Valiuta','Komisinis','Aut. kodas','RRN','Terminalas','Prekybos vieta','Miestas','Šaltinis','Dublikatas'];
+  const rows = [headers.join(';')];
+  filtered.forEach(t => {
+    rows.push(cols.map(c => {
+      const v = String(t[c] ?? '').replace(/;/g, ',');
+      return v.includes(',') ? `"${v}"` : v;
+    }).join(';'));
+  });
+  const blob = new Blob(['﻿' + rows.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `imokos_${new Date().toISOString().slice(0,10)}.csv`;
+  a.click();
+}
+
+document.addEventListener('keydown', e => { if (e.key === 'Enter') applyFilters(); });
+document.getElementById('fDups').addEventListener('change', applyFilters);
+</script>
+</body>
+</html>
