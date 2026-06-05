@@ -220,6 +220,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   </label>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
     <button class="btn btn-green btn-sm" onclick="exportCSV()">⬇ CSV</button>
+    <button class="btn btn-sm" style="background:#c62828;color:white" onclick="exportPDF()">⬇ PDF</button>
     <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtruoti</button>
     <button class="btn btn-clear btn-sm" onclick="clearFilters()">Išvalyti</button>
   </div>
@@ -623,6 +624,118 @@ function exportCSV() {
   filtered.forEach(t=>rows.push(cols.map(c=>{const v=String(t[c]??'').replace(/;/g,',');return v.includes(',')?`"${v}"`:v;}).join(';')));
   const blob=new Blob(['﻿'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`imokos_${new Date().toISOString().slice(0,10)}.csv`;a.click();
+}
+
+
+function exportPDF() {
+  if (!filtered.length) { alert('Nėra duomenų PDF ataskaitai.'); return; }
+
+  // Group by terminal
+  const groups = {};
+  filtered.forEach(t => {
+    const key = t.terminal || 'Nenurodyta';
+    if (!groups[key]) groups[key] = { terminal: t.terminal, merchantName: t.merchantName, merchantCity: t.merchantCity, rows: [] };
+    groups[key].rows.push(t);
+  });
+
+  const totalSum = filtered.reduce((s,t) => s + t.amount, 0);
+  const dupCount = filtered.filter(t => t.isDuplicate).length;
+
+  // Build HTML for print window
+  const now = new Date().toLocaleString('lt-LT');
+  let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8">
+<title>Banko įmokų ataskaita</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: Arial, sans-serif; font-size: 9pt; color: #111; }
+  .doc-header { padding: 12px 16px 8px; border-bottom: 2px solid #1a3a5c; margin-bottom: 14px; }
+  .doc-header h1 { font-size: 14pt; color: #1a3a5c; }
+  .doc-header .meta { font-size: 8pt; color: #555; margin-top: 4px; display: flex; gap: 24px; }
+  .group { margin-bottom: 20px; page-break-inside: avoid; }
+  .group-header { background: #1a3a5c; color: white; padding: 6px 10px; border-radius: 4px 4px 0 0; }
+  .group-header h2 { font-size: 10pt; font-weight: 700; }
+  .group-header .sub { font-size: 8pt; opacity: 0.85; margin-top: 2px; }
+  table { width: 100%; border-collapse: collapse; font-size: 8pt; }
+  thead th { background: #e8edf3; color: #1a3a5c; padding: 5px 6px; text-align: left; border-bottom: 1px solid #b0bec5; white-space: nowrap; }
+  tbody tr { border-bottom: 1px solid #e8ecf0; }
+  tbody tr:nth-child(even) { background: #f8f9fb; }
+  tbody tr.dup { background: #fff0f0; }
+  tbody td { padding: 4px 6px; vertical-align: top; }
+  .amount { text-align: right; font-weight: 600; color: #2e7d32; }
+  .badge-dup { background: #fde8e8; color: #c0392b; border: 1px solid #f5c0c0; border-radius: 10px; padding: 1px 5px; font-size: 7pt; white-space: nowrap; }
+  .group-footer { background: #f0f4f8; padding: 5px 10px; font-size: 8pt; text-align: right; border-top: 1px solid #b0bec5; font-weight: 600; }
+  .doc-footer { margin-top: 16px; padding-top: 8px; border-top: 1px solid #ccc; font-size: 8pt; color: #777; display: flex; justify-content: space-between; }
+  @media print {
+    @page { margin: 12mm 10mm; size: A4 landscape; }
+    .group { page-break-inside: avoid; }
+  }
+</style></head><body>
+<div class="doc-header">
+  <h1>Banko kortele surinktų įmokų ataskaita</h1>
+  <div class="meta">
+    <span>Sugeneruota: ${now}</span>
+    <span>Operacijų: ${filtered.length}</span>
+    <span>Bendra suma: ${fmt(totalSum)} EUR</span>
+    ${dupCount ? `<span style="color:#c0392b">Dublikatų: ${dupCount}</span>` : ''}
+  </div>
+</div>`;
+
+  const cols = [
+    { key: 'origDate',     label: 'Op. data' },
+    { key: 'origTime',     label: 'Laikas' },
+    { key: 'postedDate',   label: 'Apdor. data' },
+    { key: 'card',         label: 'Kortelė' },
+    { key: 'cardType',     label: 'Kortelės tipas' },
+    { key: 'amount',       label: 'Suma' },
+    { key: 'currency',     label: 'Valiuta' },
+    { key: 'authCode',     label: 'Aut. kodas' },
+    { key: 'rrn',          label: 'RRN' },
+    { key: 'source',       label: 'Šaltinis' },
+    { key: 'isDuplicate',  label: 'Dublikatas' },
+  ];
+
+  Object.values(groups).forEach(g => {
+    const groupSum = g.rows.reduce((s,t) => s + t.amount, 0);
+    html += `<div class="group">
+      <div class="group-header">
+        <h2>Terminalas: ${g.terminal || '—'} &nbsp;·&nbsp; ${g.merchantName || '—'}</h2>
+        <div class="sub">${g.merchantCity || ''} &nbsp;|&nbsp; ${g.rows.length} operacij${g.rows.length === 1 ? 'a' : g.rows.length < 10 ? 'os' : 'ų'} &nbsp;|&nbsp; ${fmt(groupSum)} EUR</div>
+      </div>
+      <table><thead><tr>${cols.map(col => `<th>${col.label}</th>`).join('')}</tr></thead><tbody>`;
+
+    g.rows.forEach(t => {
+      const isDup = t.isDuplicate;
+      const src = t.source.split('/').slice(-2).join('/');
+      html += `<tr class="${isDup ? 'dup' : ''}">`;
+      cols.forEach(col => {
+        if (col.key === 'amount') {
+          html += `<td class="amount">${fmt(t.amount)}</td>`;
+        } else if (col.key === 'source') {
+          html += `<td style="font-size:7pt;word-break:break-all">${src}</td>`;
+        } else if (col.key === 'isDuplicate') {
+          html += `<td>${isDup ? '<span class="badge-dup">⚠ Dublikatas</span>' : ''}</td>`;
+        } else {
+          html += `<td>${t[col.key] ?? ''}</td>`;
+        }
+      });
+      html += `</tr>`;
+    });
+
+    html += `</tbody></table>
+      <div class="group-footer">Terminalas iš viso: ${fmt(groupSum)} EUR</div>
+    </div>`;
+  });
+
+  html += `<div class="doc-footer">
+    <span>bankas.html ataskaita</span>
+    <span>Iš viso: ${fmt(totalSum)} EUR &nbsp;|&nbsp; ${filtered.length} operacijų</span>
+  </div></body></html>`;
+
+  const win = window.open('', '_blank');
+  win.document.write(html);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 400);
 }
 
 document.addEventListener('keydown', e=>{if(e.key==='Enter')applyFilters();});
