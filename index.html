@@ -19,26 +19,40 @@
       padding: 0 0 4rem;
     }
 
-    /* ── Header ── */
     header {
       background: #fff;
-      padding: 2.5rem 1rem 2rem;
-      text-align: center;
+      padding: 1.25rem 1.5rem;
       border-bottom: 2px solid #FFDD00;
       margin-bottom: 2.5rem;
-      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      flex-wrap: wrap;
     }
 
-    .btn-pdf, .btn-excel {
-      position: absolute;
-      top: 50%;
-      transform: translateY(-50%);
-      font-size: .8rem;
+    header h1 { margin: 0; }
+
+    .header-btns {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      flex-wrap: wrap;
     }
-    .btn-pdf   { right: 1.25rem; background: #111; color: #fff; border-color: #111; }
+
+    .btn-pdf   { background: #111; color: #fff; border-color: #111; }
     .btn-pdf:hover   { background: #333; }
-    .btn-excel { right: 11.5rem; background: #1d6f42; color: #fff; border-color: #1d6f42; }
+    .btn-excel { background: #1d6f42; color: #fff; border-color: #1d6f42; }
     .btn-excel:hover { background: #155232; }
+    .btn-save  { background: #2b6cb0; color: #fff; border-color: #2b6cb0; }
+    .btn-save:hover  { background: #2c5282; }
+    .btn-open  { background: #fff; color: #2b6cb0; border-color: #2b6cb0; }
+    .btn-open:hover  { background: #ebf4ff; }
+    .btn-clear { background: #fff; color: #c53030; border-color: #fca5a5; }
+    .btn-clear:hover { background: #fff5f5; }
+    #openFileInput { display: none; }
+
+    .sep { width: 1px; height: 24px; background: #e2e8f0; margin: 0 .15rem; }
 
     h1 {
       font-size: 1.55rem;
@@ -49,7 +63,6 @@
 
     h1 span.accent { color: #FFDD00; background: #111; padding: 0 .35em; border-radius: 4px; }
 
-    /* ── Cards ── */
     .card {
       background: #fff;
       border: 1px solid #ebebeb;
@@ -76,7 +89,6 @@
       padding: 1.5rem 1.5rem .75rem;
     }
 
-    /* ── Fields ── */
     .field { margin-bottom: 1rem; }
 
     label {
@@ -92,7 +104,8 @@
     input[type="date"],
     input.flatpickr-input,
     input[type="number"],
-    input[type="text"] {
+    input[type="text"],
+    select {
       width: 100%;
       padding: .5rem .75rem;
       border: 1.5px solid #ddd;
@@ -100,9 +113,10 @@
       font-size: .95rem;
       background: #fafafa;
       transition: border-color .15s, box-shadow .15s;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
-    input:focus {
+    input:focus, select:focus {
       outline: none;
       border-color: #FFDD00;
       box-shadow: 0 0 0 3px rgba(255,221,0,.25);
@@ -110,9 +124,10 @@
     }
 
     .row-2   { display: grid; grid-template-columns: 1fr 1fr;  gap: .75rem; }
+    .row-3   { display: grid; grid-template-columns: 1fr 1fr 1fr;  gap: .75rem; }
+    .row-4   { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr;  gap: .75rem; }
     .row-tab { display: grid; grid-template-columns: 1fr 3fr;  gap: .75rem; }
 
-    /* ── Entries table ── */
     .entries-wrap { overflow-x: auto; }
 
     table {
@@ -143,22 +158,21 @@
     tr:last-child td { border-bottom: none; }
     tr:hover td { background: #fffce8; }
 
-    /* year detail sub-rows */
     .yr-detail td   { background: #fafafa; font-size: .8rem; color: #555; padding: .35rem .8rem .35rem 2.4rem; border-bottom: 1px solid #f5f5f5; }
     .yr-detail td:first-child { padding-left: .8rem; color: #aaa; font-size: .72rem; }
     .yr-detail:last-child td  { border-bottom: 1px solid #f0f0f0; }
     .yr-toggle { background: none; border: none; cursor: pointer; font-size: .7rem; color: #aaa; padding: 0 4px; line-height: 1; transition: transform .15s; }
     .yr-toggle.open { transform: rotate(90deg); }
     .pre2010-adj td { background: #fffbea; font-style: italic; color: #888; border-top: 1px dashed #FFDD00; border-bottom: 1px dashed #FFDD00; }
+    .startbal-adj td { background: #f0f8ff; font-style: italic; color: #4477aa; border-top: 1px dashed #88aadd; border-bottom: 1px dashed #88aadd; }
     .pre2010-note { font-size: .82rem; color: #888; margin-bottom: 1rem; padding: .5rem .75rem; background: #fffce8; border-left: 3px solid #FFDD00; border-radius: 4px; }
 
     td input[type="number"]     { width: 90px;  padding: .3rem .5rem; font-size: .88rem; }
     td input[type="text"]        { width: 100%;  padding: .3rem .5rem; font-size: .88rem; }
-    td input.flatpickr-input     { width: 115px; padding: .3rem .5rem; font-size: .88rem; }
+    td input.flatpickr-input     { width: 110px; padding: .3rem .5rem; font-size: .88rem; }
+    td select                    { padding: .3rem .5rem; font-size: .88rem; }
     td:last-child                { width: 1px; white-space: nowrap; }
-    td:nth-child(4)              { min-width: 180px; }
 
-    /* ── Buttons ── */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -170,6 +184,7 @@
       font-weight: 700;
       cursor: pointer;
       transition: background .15s, box-shadow .15s, transform .1s;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     }
 
     .btn:active { transform: scale(.97); }
@@ -181,6 +196,27 @@
     }
     .btn-primary:hover { background: #ffe629; box-shadow: 0 2px 8px rgba(255,221,0,.45); }
 
+    .btn-secondary {
+      background: #f5f5f5;
+      color: #333;
+      border-color: #ddd;
+    }
+    .btn-secondary:hover { background: #eee; }
+
+    .btn-unpaid {
+      background: #fffacd;
+      color: #7a6000;
+      border-color: #e6c800;
+    }
+    .btn-unpaid:hover { background: #fff176; }
+
+    .btn-absence {
+      background: #333;
+      color: #fff;
+      border-color: #111;
+    }
+    .btn-absence:hover { background: #555; }
+
     .btn-danger {
       background: #fff;
       color: #c53030;
@@ -189,6 +225,11 @@
       font-size: .78rem;
     }
     .btn-danger:hover { background: #fff5f5; }
+
+    .btn-sm {
+      padding: .25rem .6rem;
+      font-size: .78rem;
+    }
 
     .add-btn-wrap { margin-top: .75rem; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
 
@@ -214,7 +255,6 @@
 
     .import-status.error { background: #fff5f5; border-color: #fca5a5; color: #c53030; }
 
-    /* ── Flatpickr font & style overrides ── */
     .flatpickr-calendar,
     .flatpickr-calendar *,
     .flatpickr-months .flatpickr-month,
@@ -244,7 +284,6 @@
       fill: #111;
     }
 
-    /* ── Summary ── */
     .summary-grid {
       display: grid;
       grid-template-columns: repeat(4, 1fr);
@@ -285,7 +324,6 @@
 
     .stat.green .lbl { color: #FFDD00; opacity: .7; }
 
-    /* ── Year detail ── */
     #yearDetail { max-width: 960px; margin: 0 auto 1.5rem; }
 
     #yearDetail table th:last-child,
@@ -301,9 +339,21 @@
       padding: 1rem 0;
     }
 
-    @media (max-width: 480px) {
-      .row-2, .row-tab        { grid-template-columns: 1fr; }
-      .summary-grid           { grid-template-columns: repeat(2, 1fr); }
+    /* Norms table */
+    .norms-table-wrap { overflow-x: auto; margin-bottom: .5rem; }
+    .norm-row td { padding: .4rem .6rem; }
+
+    /* entry type badges */
+    .badge-used    { color: #c53030; }
+    .badge-extra   { color: #1a7a3f; }
+    .badge-unpaid  { color: #7a6000; }
+    .badge-absence { color: #333; font-weight: 700; }
+
+    .dash-cell { color: #bbb; }
+
+    @media (max-width: 600px) {
+      .row-2, .row-3, .row-4, .row-tab { grid-template-columns: 1fr; }
+      .summary-grid { grid-template-columns: repeat(2, 1fr); }
     }
   </style>
 </head>
@@ -311,37 +361,73 @@
 
 <header>
   <h1>🏖 Atostogų likučio skaičiuoklė</h1>
-  <button class="btn btn-excel" onclick="exportExcel()">⇩ Eksportuoti Excel</button>
-  <button class="btn btn-pdf" onclick="exportPDF()">⇩ Eksportuoti PDF</button></header>
+  <div class="header-btns">
+    <button class="btn btn-clear" onclick="clearAll()">🗑 Išvalyti</button>
+    <div class="sep"></div>
+    <button class="btn btn-open"  onclick="document.getElementById('openFileInput').click()">📂 Atidaryti</button>
+    <button class="btn btn-save"  onclick="saveJSON()">💾 Išsaugoti</button>
+    <div class="sep"></div>
+    <button class="btn btn-excel" onclick="exportExcel()">⇩ Excel</button>
+    <button class="btn btn-pdf"   onclick="exportPDF()">⇩ PDF</button>
+    <input type="file" id="openFileInput" accept=".json" onchange="loadJSON(this)" />
+  </div>
+</header>
 
-<!-- Pagrindiniai duomenys -->
+<!-- Darbuotojo duomenys -->
 <div class="card">
   <h2>Darbuotojo duomenys</h2>
   <div class="card-body">
-  <div class="row-tab">
-    <div class="field">
-      <label>Tabelinis Nr.</label>
-      <input type="text" id="empTab" placeholder="TB-00001" />
+    <div class="row-tab">
+      <div class="field">
+        <label>Tabelinis Nr.</label>
+        <input type="text" id="empTab" placeholder="TB-00001" />
+      </div>
+      <div class="field">
+        <label>Darbuotojo vardas</label>
+        <input type="text" id="empName" placeholder="Vardas Pavardė" />
+      </div>
     </div>
-    <div class="field">
-      <label>Darbuotojo vardas</label>
-      <input type="text" id="empName" placeholder="Vardas Pavardė" />
+    <div class="row-3">
+      <div class="field">
+        <label>Įdarbinimo data</label>
+        <input id="startDate" type="text" placeholder="YYYY-MM-DD" />
+      </div>
+      <div class="field">
+        <label>Pradinio likučio data</label>
+        <input id="startBalDate" type="text" placeholder="YYYY-MM-DD" />
+      </div>
+      <div class="field">
+        <label>Pradinis likutis (d.d.)</label>
+        <input type="number" id="startBalDays" min="0" step="0.5" value="" placeholder="0" onchange="renderSummary()" oninput="renderSummary()" />
+      </div>
     </div>
-  </div>
-  <div class="row-2">
-    <div class="field">
-      <label>Įdarbinimo data</label>
-      <input type="date" id="startDate" />
-    </div>
-    <div class="field">
-      <label>Metinis atostogų skaičius (d. d.)</label>
-      <input type="number" id="annualDays" min="1" max="365" value="20" />
-    </div>
-  </div>
   </div>
 </div>
 
-<!-- Iki 2010 likutis (rodoma tik kai įdarbintas iki 2010) -->
+<!-- Atostogų normos -->
+<div class="card">
+  <h2>Atostogų normos</h2>
+  <div class="card-body">
+    <div class="norms-table-wrap">
+      <table id="normsTable">
+        <thead>
+          <tr>
+            <th>Galioja nuo</th>
+            <th>Dienos/metus</th>
+            <th>Tipas</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="normsBody"></tbody>
+      </table>
+    </div>
+    <div class="add-btn-wrap">
+      <button class="btn btn-primary btn-sm" onclick="addNorm()">+ Norma</button>
+    </div>
+  </div>
+</div>
+
+<!-- Iki 2010 likutis -->
 <div class="card" id="pre2010Card" style="display:none">
   <h2>Laikotarpis iki 2009-12-31</h2>
   <div class="card-body">
@@ -349,11 +435,11 @@
     <div class="row-2">
       <div class="field">
         <label>Papildomos atostogos iki 2009-12-31 (d.d.)</label>
-        <input type="number" id="pre2010Extra" min="0" step="0.5" value="0" onchange="renderSummary()" />
+        <input type="number" id="pre2010Extra" min="0" step="0.5" value="0" onchange="renderSummary()" oninput="renderSummary()" />
       </div>
       <div class="field">
         <label>Panaudotos atostogos iki 2009-12-31 (d.d.)</label>
-        <input type="number" id="pre2010Used" min="0" step="0.5" value="0" onchange="renderSummary()" />
+        <input type="number" id="pre2010Used" min="0" step="0.5" value="0" onchange="renderSummary()" oninput="renderSummary()" />
       </div>
     </div>
   </div>
@@ -363,102 +449,170 @@
 <div class="card">
   <h2>Suvestinė</h2>
   <div class="card-body">
-  <div class="summary-grid">
-    <div class="stat blue">
-      <div class="val" id="sAccrued">–</div>
-      <div class="lbl">Sukauptos dienos</div>
+    <div class="summary-grid">
+      <div class="stat">
+        <div class="val" id="sAccrued">–</div>
+        <div class="lbl">Sukauptos dienos</div>
+      </div>
+      <div class="stat">
+        <div class="val" id="sExtra">–</div>
+        <div class="lbl">Papildomos dienos</div>
+      </div>
+      <div class="stat">
+        <div class="val" id="sUsed">–</div>
+        <div class="lbl">Panaudotos dienos</div>
+      </div>
+      <div class="stat green">
+        <div class="val" id="sBalance">–</div>
+        <div class="lbl">Likutis</div>
+      </div>
     </div>
-    <div class="stat orange">
-      <div class="val" id="sExtra">–</div>
-      <div class="lbl">Papildomos dienos</div>
-    </div>
-    <div class="stat red">
-      <div class="val" id="sUsed">–</div>
-      <div class="lbl">Panaudotos dienos</div>
-    </div>
-    <div class="stat green">
-      <div class="val" id="sBalance">–</div>
-      <div class="lbl">Likutis</div>
-    </div>
-  </div>
   </div>
 </div>
 
-<!-- Metinis detalizavimas -->
+<!-- Metinis kaupimas -->
 <div class="card" id="yearDetail">
   <h2>Metinis kaupimas</h2>
   <div class="card-body">
-  <div class="entries-wrap">
-    <table>
-      <thead>
-        <tr>
-          <th style="width:28px"></th>
-          <th>Metai</th>
-          <th>Sukauptos</th>
-          <th>Papild.</th>
-          <th>Panaudotos</th>
-          <th>Likutis</th>
-        </tr>
-      </thead>
-      <tbody id="yearBody"></tbody>
-    </table>
-  </div>
+    <div class="entries-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:28px"></th>
+            <th>Metai</th>
+            <th>Sukauptos</th>
+            <th>Papild.</th>
+            <th>Panaudotos</th>
+            <th>Likutis</th>
+          </tr>
+        </thead>
+        <tbody id="yearBody"></tbody>
+      </table>
+    </div>
   </div>
 </div>
 
-<!-- Panaudotos / papildomos atostogos -->
+<!-- Įrašai -->
 <div class="card">
   <h2>Panaudotos ir papildomos atostogos</h2>
   <div class="card-body">
-  <div class="entries-wrap">
-    <table id="entriesTable">
-      <thead>
-        <tr>
-          <th>Data</th>
-          <th>Tipas</th>
-          <th>Dienos</th>
-          <th>Pastaba</th>
-          <th></th>
-        </tr>
-      </thead>
-      <tbody id="entriesBody"></tbody>
-    </table>
-    <p id="noEntries" class="empty-msg">Įrašų nėra. Pridėkite panaudotas arba papildomas atostogas.</p>
-  </div>
-  <div class="add-btn-wrap">
-    <button class="btn btn-primary" onclick="addEntry('used')">+ Panaudotos</button>
-    <button class="btn btn-primary" onclick="addEntry('extra')">+ Papildomos</button>
-    <button class="btn btn-import" onclick="document.getElementById('importFileInput').click()">📥 Importuoti iš Excel</button>
-    <input type="file" id="importFileInput" accept=".xlsx,.xls,.ods" onchange="importExcel(this)" />
-    <span id="importStatus" class="import-status"></span>
-  </div>
+    <div class="entries-wrap">
+      <table id="entriesTable">
+        <thead>
+          <tr>
+            <th>Nuo</th>
+            <th>Iki</th>
+            <th>Tipas</th>
+            <th>Dienos</th>
+            <th>Pastaba</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="entriesBody"></tbody>
+      </table>
+      <p id="noEntries" class="empty-msg">Įrašų nėra. Pridėkite panaudotas arba papildomas atostogas.</p>
+    </div>
+    <div class="add-btn-wrap">
+      <button class="btn btn-primary" onclick="addEntry('used')">+ Panaudotos</button>
+      <button class="btn btn-primary" onclick="addEntry('extra')">+ Papildomos</button>
+      <button class="btn btn-unpaid" onclick="addEntry('unpaid')">+ Neapmokamos</button>
+      <button class="btn btn-absence" onclick="addEntry('absence')">+ Pravaikšta</button>
+      <button class="btn btn-import" onclick="document.getElementById('importFileInput').click()">📥 Importuoti iš Excel</button>
+      <input type="file" id="importFileInput" accept=".xlsx,.xls,.ods" onchange="importExcel(this)" />
+      <span id="importStatus" class="import-status"></span>
+    </div>
   </div>
 </div>
 
 <script>
 // ── State ──────────────────────────────────────────────────────────────────
-let entries = [];   // { id, date, type: 'used'|'extra', days, note }
+let norms   = [];  // [{id, fromDate:'YYYY-MM-DD', days:number, typeLabel:'d.d.'|'k.d.'}]
+let entries = [];  // [{id, date, endDate?, type:'used'|'extra'|'unpaid'|'absence', days?, daysPerYear?, note}]
+let startBal = { date: '', days: 0 };
 let nextId = 1;
 
 // ── Helpers ────────────────────────────────────────────────────────────────
 const $ = id => document.getElementById(id);
 
-function isLeapYear(year) {
-  return (year % 4 === 0 && year % 100 !== 0) || year % 400 === 0;
+function parseDate(str) {
+  if (!str) return null;
+  const d = new Date(str);
+  if (isNaN(d)) return null;
+  d.setHours(0,0,0,0);
+  return d;
 }
 
-/**
- * Splits the accrual period into segments: each segment = portion of a work year
- * that falls within one calendar year.
- * Formula: accrued = (segmentDays / workYearTotalDays) * annualDays
- * This guarantees exactly annualDays per full work year, regardless of leap years.
- * Returns array of { calYear, segStart, segEnd, segDays, wyTotalDays, accrued }
- */
-function computeAccrual(startDate, annualDays) {
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+function fmtDate(d) {
+  if (!d) return '';
+  const y = d.getFullYear();
+  const m = String(d.getMonth()+1).padStart(2,'0');
+  const dy = String(d.getDate()).padStart(2,'0');
+  return `${y}-${m}-${dy}`;
+}
 
-  if (!startDate || startDate > today) return [];
+function fmtDateLT(d) {
+  if (!d) return '';
+  return d.toLocaleDateString('lt-LT');
+}
+
+function addDays(d, n) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + n);
+  return r;
+}
+
+function daysBetween(a, b) {
+  // Inclusive count: b-a in days +1
+  return Math.round((b - a) / 86400000) + 1;
+}
+
+function clamp(d, lo, hi) {
+  if (d < lo) return new Date(lo);
+  if (d > hi) return new Date(hi);
+  return new Date(d);
+}
+
+// ── Non-accruing periods ──────────────────────────────────────────────────
+// Returns [{effStart: Date, end: Date}]
+function buildNonAccruingPeriods(entries) {
+  const periods = [];
+  entries.forEach(e => {
+    if ((e.type === 'unpaid' || e.type === 'absence') && e.date && e.endDate) {
+      const start = parseDate(e.date);
+      const end   = parseDate(e.endDate);
+      if (!start || !end || end < start) return;
+      const grace = e.type === 'unpaid' ? 14 : 0;
+      const effStart = addDays(start, grace);
+      if (effStart <= end) {
+        periods.push({ effStart, end });
+      }
+    }
+  });
+  return periods;
+}
+
+// Returns calendar days in [segStart..segEnd] that overlap with nonAccruingPeriods
+function nonAccruingDaysInSegment(segStart, segEnd, nonAccruingPeriods) {
+  let total = 0;
+  for (const p of nonAccruingPeriods) {
+    const lo = p.effStart > segStart ? p.effStart : segStart;
+    const hi = p.end < segEnd ? p.end : segEnd;
+    if (lo <= hi) {
+      total += Math.round((hi - lo) / 86400000) + 1;
+    }
+  }
+  return total;
+}
+
+// ── computeAccrual ────────────────────────────────────────────────────────
+// sortedNorms: [{fromDate:Date, days:number, typeLabel}] sorted asc
+// nonAccruingPeriods: [{effStart:Date, end:Date}]
+// Returns segments: [{calYear, segStart, segEnd, segDays, workedDays, wyTotalDays, accrued, wyIndex, wyStartDate, normDays, normType}]
+function computeAccrual(startDate, sortedNorms, nonAccruingPeriods) {
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  if (!startDate || startDate > today || !sortedNorms.length) return [];
 
   const segments = [];
   let wyStart = new Date(startDate);
@@ -467,21 +621,58 @@ function computeAccrual(startDate, annualDays) {
   while (wyStart <= today) {
     wyIndex++;
     const wyStartSnap = new Date(wyStart);
-    const nextAnniv   = new Date(wyStart.getFullYear() + 1, wyStart.getMonth(), wyStart.getDate());
+    const nextAnniv   = new Date(wyStart.getFullYear()+1, wyStart.getMonth(), wyStart.getDate());
     const wyEnd       = new Date(nextAnniv - 86400000);
-    const wyTotalDays = Math.round((nextAnniv - wyStart) / 86400000); // always 365 or 366
+    const wyTotalDays = Math.round((nextAnniv - wyStart) / 86400000);
     const periodEnd   = wyEnd < today ? wyEnd : new Date(today);
 
-    // Split this work year into calendar-year segments
-    let seg = new Date(wyStart);
-    while (seg <= periodEnd) {
-      const calYear  = seg.getFullYear();
-      const calEnd   = new Date(calYear, 11, 31);
-      const segEnd   = calEnd < periodEnd ? calEnd : new Date(periodEnd);
-      const segDays  = Math.round((segEnd - seg) / 86400000) + 1;
-      const accrued  = (segDays / wyTotalDays) * annualDays;
-      segments.push({ calYear, segStart: new Date(seg), segEnd, segDays, wyTotalDays, accrued, wyIndex, wyStartDate: wyStartSnap });
-      seg = new Date(calYear + 1, 0, 1);
+    // Find norm change points within [wyStart, periodEnd]
+    // Split work year into sub-periods at norm changes
+    const normChanges = [new Date(wyStart)];
+    sortedNorms.forEach(n => {
+      if (n.fromDate > wyStart && n.fromDate <= periodEnd) {
+        normChanges.push(new Date(n.fromDate));
+      }
+    });
+    normChanges.push(new Date(addDays(periodEnd, 1)));
+
+    for (let ni = 0; ni < normChanges.length - 1; ni++) {
+      const subStart = normChanges[ni];
+      const subEnd   = new Date(addDays(normChanges[ni+1], -1));
+      if (subStart > periodEnd) break;
+      const clampedEnd = subEnd > periodEnd ? new Date(periodEnd) : new Date(subEnd);
+
+      // Find applicable norm at subStart
+      let norm = sortedNorms[0];
+      for (const n of sortedNorms) {
+        if (n.fromDate <= subStart) norm = n;
+      }
+
+      // Split sub-period into calendar year segments
+      let seg = new Date(subStart);
+      while (seg <= clampedEnd) {
+        const calYear = seg.getFullYear();
+        const calEnd  = new Date(calYear, 11, 31);
+        const segEnd  = calEnd < clampedEnd ? calEnd : new Date(clampedEnd);
+        const segDays = Math.round((segEnd - seg) / 86400000) + 1;
+        const nonAcc  = nonAccruingDaysInSegment(seg, segEnd, nonAccruingPeriods);
+        const workedDays = Math.max(0, segDays - nonAcc);
+        const accrued = (workedDays / wyTotalDays) * norm.days;
+        segments.push({
+          calYear,
+          segStart: new Date(seg),
+          segEnd,
+          segDays,
+          workedDays,
+          wyTotalDays,
+          accrued,
+          wyIndex,
+          wyStartDate: wyStartSnap,
+          normDays: norm.days,
+          normType: norm.typeLabel
+        });
+        seg = new Date(calYear+1, 0, 1);
+      }
     }
 
     wyStart = nextAnniv;
@@ -491,37 +682,209 @@ function computeAccrual(startDate, annualDays) {
   return segments;
 }
 
-// ── Render entries table ───────────────────────────────────────────────────
+// ── Extra days expansion ──────────────────────────────────────────────────
+// Returns {year: days} map from all extra entries
+function buildExtraByYear(entries) {
+  const map = {};
+  entries.forEach(e => {
+    if (e.type !== 'extra') return;
+    if (!e.date) return;
+    const fromYear = parseInt(e.date.substring(0,4), 10);
+    if (e.endDate) {
+      const toYear = parseInt(e.endDate.substring(0,4), 10);
+      const dpY = parseFloat(e.daysPerYear) || 0;
+      for (let y = fromYear; y <= toYear; y++) {
+        map[y] = (map[y] || 0) + dpY;
+      }
+    } else {
+      const d = parseFloat(e.days) || 0;
+      map[fromYear] = (map[fromYear] || 0) + d;
+    }
+  });
+  return map;
+}
+
+// ── Norms CRUD ─────────────────────────────────────────────────────────────
+function addNorm(fromDate, days, typeLabel) {
+  const id = nextId++;
+  const norm = {
+    id,
+    fromDate: fromDate || ($('startDate').value || ''),
+    days: days || 20,
+    typeLabel: typeLabel || 'd.d.'
+  };
+  norms.push(norm);
+  renderNorms();
+  renderSummary();
+}
+
+function removeNorm(id) {
+  norms = norms.filter(n => n.id !== id);
+  renderNorms();
+  renderSummary();
+}
+
+function updateNorm(id, field, value) {
+  const n = norms.find(n => n.id === id);
+  if (!n) return;
+  if (field === 'days') n.days = parseFloat(value) || 0;
+  else n[field] = value;
+  renderSummary();
+}
+
+function renderNorms() {
+  const tbody = $('normsBody');
+  // Destroy flatpickr instances
+  tbody.querySelectorAll('input[id^="nfp-"]').forEach(inp => {
+    if (inp._flatpickr) inp._flatpickr.destroy();
+  });
+  tbody.innerHTML = '';
+  norms.forEach((n, idx) => {
+    const tr = document.createElement('tr');
+    tr.className = 'norm-row';
+    tr.id = `nrow-${n.id}`;
+    tr.innerHTML = `
+      <td><input id="nfp-${n.id}" type="text" value="${n.fromDate}" placeholder="YYYY-MM-DD" style="width:120px" /></td>
+      <td><input type="number" min="1" max="365" step="0.5" value="${n.days}" onchange="updateNorm(${n.id},'days',this.value)" oninput="updateNorm(${n.id},'days',this.value)" style="width:80px" /></td>
+      <td><select onchange="updateNorm(${n.id},'typeLabel',this.value)" style="width:80px">
+        <option value="d.d."${n.typeLabel==='d.d.'?' selected':''}>d.d.</option>
+        <option value="k.d."${n.typeLabel==='k.d.'?' selected':''}>k.d.</option>
+      </select></td>
+      <td><button class="btn btn-danger btn-sm" onclick="removeNorm(${n.id})" ${norms.length<=1?'disabled':''}>✕</button></td>
+    `;
+    tbody.appendChild(tr);
+    flatpickr(`#nfp-${n.id}`, {
+      ...FP_CONFIG,
+      defaultDate: n.fromDate || null,
+      onChange: ([d]) => {
+        if (!d) return;
+        updateNorm(n.id, 'fromDate', fmtDate(d));
+      }
+    });
+  });
+}
+
+// ── Entry CRUD ─────────────────────────────────────────────────────────────
+function addEntry(type) {
+  const today = fmtDate(new Date());
+  const e = { id: nextId++, date: today, endDate: '', type, days: 1, daysPerYear: 1, note: '' };
+  entries.push(e);
+  renderEntries();
+  renderSummary();
+}
+
+function updateEntry(id, field, value) {
+  const e = entries.find(e => e.id === id);
+  if (!e) return;
+  if (field === 'days' || field === 'daysPerYear') e[field] = parseFloat(value) || 0;
+  else e[field] = value;
+  // If extra: when endDate set, switch to daysPerYear mode
+  renderSummary();
+}
+
+function removeEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  const row = document.getElementById(`erow-${id}`);
+  if (row) {
+    row.querySelectorAll('input[id^="fp-"]').forEach(inp => {
+      if (inp._flatpickr) inp._flatpickr.destroy();
+    });
+    row.remove();
+  }
+  $('noEntries').style.display = entries.length ? 'none' : 'block';
+  renderSummary();
+}
+
 function addEntryRow(e) {
   $('noEntries').style.display = 'none';
-  const tbody   = $('entriesBody');
-  const tr      = document.createElement('tr');
-  const inputId = `fp-${e.id}`;
+  const tbody = $('entriesBody');
+  const tr = document.createElement('tr');
   tr.id = `erow-${e.id}`;
+
+  const typeLabels = {
+    used:    '<span class="badge-used">🔴 Panaudotos</span>',
+    extra:   '<span class="badge-extra">🟢 Papildomos</span>',
+    unpaid:  '<span class="badge-unpaid">🟡 Neapmokamos</span>',
+    absence: '<span class="badge-absence">⚫ Pravaikšta</span>',
+  };
+
+  // Nuo cell
+  const nuoId = `fp-nuo-${e.id}`;
+  // Iki cell
+  const ikiId = `fp-iki-${e.id}`;
+
+  // Dienos cell
+  let diasCell = '';
+  if (e.type === 'used') {
+    diasCell = `<input type="number" min="0.5" step="0.5" value="${e.days||1}" onchange="updateEntry(${e.id},'days',this.value)" oninput="updateEntry(${e.id},'days',this.value)" />`;
+  } else if (e.type === 'extra') {
+    if (e.endDate) {
+      diasCell = `<input type="number" min="0.5" step="0.5" title="d.d./metus" value="${e.daysPerYear||1}" onchange="updateEntry(${e.id},'daysPerYear',this.value)" oninput="updateEntry(${e.id},'daysPerYear',this.value)" /> <small style="color:#aaa">d.d./m.</small>`;
+    } else {
+      diasCell = `<input type="number" min="0.5" step="0.5" value="${e.days||1}" onchange="updateEntry(${e.id},'days',this.value)" oninput="updateEntry(${e.id},'days',this.value)" />`;
+    }
+  } else {
+    diasCell = `<span class="dash-cell">–</span>`;
+  }
+
+  // Iki cell content
+  let ikiCell = '';
+  if (e.type === 'used') {
+    ikiCell = `<span class="dash-cell">–</span>`;
+  } else {
+    // extra, unpaid, absence all have iki input
+    ikiCell = `<input id="${ikiId}" type="text" value="${e.endDate||''}" placeholder="${e.type==='extra'?'neprivaloma':'būtina'}" style="width:110px" />`;
+  }
+
   tr.innerHTML = `
-    <td><input id="${inputId}" type="text" value="${e.date}" placeholder="MMMM-MM-DD" /></td>
-    <td>${e.type === 'used' ? '🔴 Panaudotos' : '🟢 Papildomos'}</td>
-    <td><input type="number" min="0.5" step="0.5" value="${e.days}" onchange="updateEntry(${e.id},'days',this.value)" /></td>
-    <td><input type="text" value="${e.note}" placeholder="–" onchange="updateEntry(${e.id},'note',this.value)" /></td>
+    <td><input id="${nuoId}" type="text" value="${e.date||''}" placeholder="YYYY-MM-DD" /></td>
+    <td>${ikiCell}</td>
+    <td>${typeLabels[e.type]}</td>
+    <td>${diasCell}</td>
+    <td><input type="text" value="${e.note||''}" placeholder="–" onchange="updateEntry(${e.id},'note',this.value)" /></td>
     <td><button class="btn btn-danger" onclick="removeEntry(${e.id})">✕</button></td>
   `;
   tbody.appendChild(tr);
-  flatpickr(`#${inputId}`, {
+
+  // Init Nuo flatpickr
+  flatpickr(`#${nuoId}`, {
     ...FP_CONFIG,
     defaultDate: e.date || null,
     onChange: ([d]) => {
       if (!d) return;
-      const y  = d.getFullYear();
-      const mo = String(d.getMonth() + 1).padStart(2, '0');
-      const da = String(d.getDate()).padStart(2, '0');
-      updateEntry(e.id, 'date', `${y}-${mo}-${da}`);
+      updateEntry(e.id, 'date', fmtDate(d));
     }
   });
+
+  // Init Iki flatpickr (if element exists)
+  const ikiEl = tr.querySelector(`#${ikiId}`);
+  if (ikiEl) {
+    flatpickr(`#${ikiId}`, {
+      ...FP_CONFIG,
+      defaultDate: e.endDate || null,
+      onChange: ([d]) => {
+        const val = d ? fmtDate(d) : '';
+        updateEntry(e.id, 'endDate', val);
+        // Re-render this row to switch days/daysPerYear mode for extra
+        if (e.type === 'extra') {
+          const row = document.getElementById(`erow-${e.id}`);
+          if (row) {
+            // Destroy all fps in row
+            row.querySelectorAll('input[id^="fp-"]').forEach(inp => {
+              if (inp._flatpickr) inp._flatpickr.destroy();
+            });
+            row.remove();
+          }
+          addEntryRow(e);
+        }
+        renderSummary();
+      }
+    });
+  }
 }
 
 function renderEntries() {
   const tbody = $('entriesBody');
-  // Destroy existing flatpickr instances before clearing
   tbody.querySelectorAll('input[id^="fp-"]').forEach(inp => {
     if (inp._flatpickr) inp._flatpickr.destroy();
   });
@@ -530,38 +893,88 @@ function renderEntries() {
   entries.forEach(e => addEntryRow(e));
 }
 
-// ── Render summary & year table ────────────────────────────────────────────
+// ── renderSummary ──────────────────────────────────────────────────────────
 function renderSummary() {
-  const startVal   = $('startDate').value;
-  const annualDays = parseFloat($('annualDays').value) || 0;
-
-  if (!startVal || !annualDays) {
+  const startVal = $('startDate').value;
+  if (!startVal || !norms.length) {
     ['sAccrued','sExtra','sUsed','sBalance'].forEach(id => $(id).textContent = '–');
     $('yearBody').innerHTML = '';
     return;
   }
 
-  const startDate = new Date(startVal);
-  startDate.setHours(0,0,0,0);
+  const startDate = parseDate(startVal);
+  if (!startDate) {
+    ['sAccrued','sExtra','sUsed','sBalance'].forEach(id => $(id).textContent = '–');
+    $('yearBody').innerHTML = '';
+    return;
+  }
 
-  const accrual = computeAccrual(startDate, annualDays);
+  // Build sorted norms
+  const sortedNorms = norms
+    .map(n => ({ ...n, fromDate: parseDate(n.fromDate) || new Date(startDate) }))
+    .filter(n => n.fromDate)
+    .sort((a,b) => a.fromDate - b.fromDate);
 
-  // Pre-2010 lump-sum values (only when employee started before 2010)
-  const showPre2010    = $('pre2010Card').style.display !== 'none';
-  const pre2010Extra   = showPre2010 ? (parseFloat($('pre2010Extra').value) || 0) : 0;
-  const pre2010Used    = showPre2010 ? (parseFloat($('pre2010Used').value)  || 0) : 0;
+  if (!sortedNorms.length) {
+    ['sAccrued','sExtra','sUsed','sBalance'].forEach(id => $(id).textContent = '–');
+    $('yearBody').innerHTML = '';
+    return;
+  }
 
-  // Totals from entries
-  let totalUsed  = pre2010Used;
-  let totalExtra = pre2010Extra;
-  entries.forEach(e => {
-    const d = parseFloat(e.days) || 0;
-    if (e.type === 'used')  totalUsed  += d;
-    else                    totalExtra += d;
+  // Non-accruing periods
+  const nonAccruingPeriods = buildNonAccruingPeriods(entries);
+
+  // Compute accrual
+  const accrual = computeAccrual(startDate, sortedNorms, nonAccruingPeriods);
+
+  // Starting balance
+  startBal.date = $('startBalDate').value || '';
+  startBal.days = parseFloat($('startBalDays').value) || 0;
+  const balDate = parseDate(startBal.date);
+
+  // Pre-2010
+  const showPre2010  = $('pre2010Card').style.display !== 'none';
+  const pre2010Extra = showPre2010 ? (parseFloat($('pre2010Extra').value) || 0) : 0;
+  const pre2010Used  = showPre2010 ? (parseFloat($('pre2010Used').value)  || 0) : 0;
+
+  // Extra by year map
+  const extraByYear = buildExtraByYear(entries);
+
+  // Totals (if balDate set, filter accrual and entries from balDate onwards)
+  let totalAccrued = 0;
+  accrual.forEach(seg => {
+    if (!balDate || seg.segEnd >= balDate) {
+      totalAccrued += seg.accrued;
+    }
   });
 
-  const totalAccrued = accrual.reduce((s, seg) => s + seg.accrued, 0);
-  const balance      = totalAccrued + totalExtra - totalUsed;
+  let totalUsed  = pre2010Used;
+  let totalExtra = pre2010Extra;
+
+  entries.forEach(e => {
+    if (!e.date) return;
+    const eDate = parseDate(e.date);
+    if (balDate && eDate && eDate < balDate) return;
+    if (e.type === 'used') totalUsed  += parseFloat(e.days) || 0;
+    else if (e.type === 'extra') {
+      if (e.endDate) {
+        // sum daysPerYear across years from balDate year (or fromDate year)
+        const fromYear = Math.max(
+          parseInt(e.date.substring(0,4),10),
+          balDate ? balDate.getFullYear() : 0
+        );
+        const toYear = parseInt(e.endDate.substring(0,4),10);
+        const dpY = parseFloat(e.daysPerYear) || 0;
+        for (let y = fromYear; y <= toYear; y++) totalExtra += dpY;
+      } else {
+        totalExtra += parseFloat(e.days) || 0;
+      }
+    }
+  });
+
+  if (startBal.days && balDate) totalAccrued += startBal.days;
+
+  const balance = totalAccrued + totalExtra - totalUsed;
 
   $('sAccrued').textContent = totalAccrued.toFixed(2);
   $('sExtra').textContent   = totalExtra.toFixed(2);
@@ -569,46 +982,67 @@ function renderSummary() {
   $('sBalance').textContent = balance.toFixed(2);
   $('sBalance').className   = 'val ' + (balance < 0 ? 'negative' : 'positive');
 
-  // Year table – group segments by calendar year
+  // ── Year table ─────────────────────────────────────────────────────────
   const tbody = $('yearBody');
   tbody.innerHTML = '';
 
-  // Sum accrued per calendar year from segments
+  // Group accrual segments by calendar year
   const accruedByYear = {};
-  // Group segments by calendar year
-  const segsByYear = {};
+  const segsByYear    = {};
   accrual.forEach(seg => {
-    if (!segsByYear[seg.calYear]) segsByYear[seg.calYear] = [];
-    segsByYear[seg.calYear].push(seg);
-    accruedByYear[seg.calYear] = (accruedByYear[seg.calYear] || 0) + seg.accrued;
+    if (balDate && seg.segEnd < balDate) return;
+    const yr = seg.calYear;
+    accruedByYear[yr] = (accruedByYear[yr] || 0) + seg.accrued;
+    if (!segsByYear[yr]) segsByYear[yr] = [];
+    segsByYear[yr].push(seg);
   });
 
-  // Map entries to calendar year (parse year directly from string to avoid timezone issues)
-  const extraByYear = {};
-  const usedByYear  = {};
+  // used by year
+  const usedByYear = {};
   entries.forEach(e => {
-    if (!e.date) return;
-    const y = parseInt(e.date.substring(0, 4), 10);
-    if (!y) return;
-    const d = parseFloat(e.days) || 0;
-    if (e.type === 'extra') extraByYear[y] = (extraByYear[y] || 0) + d;
-    else                    usedByYear[y]  = (usedByYear[y]  || 0) + d;
+    if (!e.date || e.type !== 'used') return;
+    if (balDate && parseDate(e.date) < balDate) return;
+    const y = parseInt(e.date.substring(0,4),10);
+    usedByYear[y] = (usedByYear[y] || 0) + (parseFloat(e.days) || 0);
   });
 
-  const fmtD = dt => dt.toLocaleDateString('lt-LT');
+  // filtered extraByYear respecting balDate
+  const filteredExtraByYear = {};
+  entries.forEach(e => {
+    if (e.type !== 'extra' || !e.date) return;
+    if (e.endDate) {
+      const fromYear = parseInt(e.date.substring(0,4),10);
+      const toYear   = parseInt(e.endDate.substring(0,4),10);
+      const dpY = parseFloat(e.daysPerYear) || 0;
+      for (let y = fromYear; y <= toYear; y++) {
+        if (balDate && y < balDate.getFullYear()) continue;
+        filteredExtraByYear[y] = (filteredExtraByYear[y] || 0) + dpY;
+      }
+    } else {
+      if (balDate && parseDate(e.date) < balDate) return;
+      const y = parseInt(e.date.substring(0,4),10);
+      filteredExtraByYear[y] = (filteredExtraByYear[y] || 0) + (parseFloat(e.days) || 0);
+    }
+  });
+
+  const allYears = new Set([
+    ...Object.keys(accruedByYear),
+    ...Object.keys(filteredExtraByYear),
+    ...Object.keys(usedByYear)
+  ]);
+  const sortedYears = Array.from(allYears).map(Number).sort((a,b)=>a-b);
 
   let runningBalance = 0;
   let pre2010AdjInserted = false;
-  const sortedYears = Object.keys(accruedByYear).sort();
+  let startBalInserted = false;
 
   sortedYears.forEach(yr => {
-    const yearNum     = parseInt(yr, 10);
-    const yearAccrued = accruedByYear[yr];
-    const extra       = extraByYear[yr] || 0;
-    const used        = usedByYear[yr]  || 0;
+    const yearAccrued = accruedByYear[yr] || 0;
+    const extra       = filteredExtraByYear[yr] || 0;
+    const used        = usedByYear[yr] || 0;
 
-    // Insert pre-2010 adjustment row just before the first year >= 2010
-    if (!pre2010AdjInserted && yearNum >= 2010 && (pre2010Extra || pre2010Used)) {
+    // Pre-2010 adj
+    if (!pre2010AdjInserted && yr >= 2010 && (pre2010Extra || pre2010Used) && !balDate) {
       pre2010AdjInserted = true;
       runningBalance += pre2010Extra - pre2010Used;
       const adjClass = runningBalance < 0 ? 'negative' : 'positive';
@@ -625,18 +1059,36 @@ function renderSummary() {
       tbody.appendChild(adjTr);
     }
 
+    // Starting balance adj
+    if (!startBalInserted && balDate && yr >= balDate.getFullYear() && startBal.days) {
+      startBalInserted = true;
+      runningBalance += startBal.days;
+      const adjClass = runningBalance < 0 ? 'negative' : 'positive';
+      const adjTr = document.createElement('tr');
+      adjTr.className = 'startbal-adj';
+      adjTr.innerHTML = `
+        <td></td>
+        <td>Pradinis likutis (${startBal.date})</td>
+        <td>${startBal.days.toFixed(2)}</td>
+        <td>–</td>
+        <td>–</td>
+        <td class="${adjClass}">${runningBalance.toFixed(2)}</td>
+      `;
+      tbody.appendChild(adjTr);
+    }
+
     runningBalance += yearAccrued + extra - used;
 
-    const segs   = segsByYear[yr] || [];
-    const rowId  = `yr-${yr}`;
+    const segs = segsByYear[yr] || [];
+    const rowId = `yr-${yr}`;
     const hasDetail = segs.length > 1;
-
-    const tr       = document.createElement('tr');
     const balClass = runningBalance < 0 ? 'negative' : 'positive';
+
+    const tr = document.createElement('tr');
     tr.innerHTML = `
       <td>${hasDetail ? `<button class="yr-toggle" onclick="toggleYrDetail('${rowId}', this)">▶</button>` : ''}</td>
       <td><strong>${yr}</strong></td>
-      <td>${yearAccrued.toFixed(2)}</td>
+      <td title="Norma: ${segs.length ? segs[0].normDays+' '+segs[0].normType : ''}">${yearAccrued.toFixed(2)}</td>
       <td>${extra ? extra.toFixed(2) : '–'}</td>
       <td>${used  ? used.toFixed(2)  : '–'}</td>
       <td class="${balClass}">${runningBalance.toFixed(2)}</td>
@@ -648,73 +1100,97 @@ function renderSummary() {
         const dtr = document.createElement('tr');
         dtr.className = `yr-detail yr-detail-${rowId}`;
         dtr.style.display = 'none';
+        const nonAccNote = seg.segDays !== seg.workedDays
+          ? ` <span style="color:#c00" title="Nekauptų dienų: ${seg.segDays - seg.workedDays}">(−${seg.segDays - seg.workedDays} d.)</span>`
+          : '';
         dtr.innerHTML = `
           <td></td>
-          <td colspan="2" style="white-space:nowrap">${fmtD(seg.segStart)} – ${fmtD(seg.segEnd)}</td>
-          <td style="color:#888">${seg.accrued.toFixed(2)} d.d.</td>
-          <td colspan="2" style="color:#aaa;font-size:.72rem">${seg.segDays}/${seg.wyTotalDays} darbo m. dienų</td>
+          <td colspan="2" style="white-space:nowrap">${fmtDateLT(seg.segStart)} – ${fmtDateLT(seg.segEnd)}</td>
+          <td style="color:#888">${seg.accrued.toFixed(2)} ${seg.normType}${nonAccNote}</td>
+          <td colspan="2" style="color:#aaa;font-size:.72rem">${seg.workedDays}/${seg.wyTotalDays} d. (norma: ${seg.normDays} ${seg.normType})</td>
         `;
         tbody.appendChild(dtr);
       });
     }
   });
+
+  scheduleAutoSave();
 }
 
-// ── Year detail toggle ─────────────────────────────────────────────────────
 function toggleYrDetail(rowId, btn) {
   const rows = document.querySelectorAll(`.yr-detail-${rowId}`);
   const open = btn.classList.toggle('open');
   rows.forEach(r => r.style.display = open ? '' : 'none');
 }
 
-// ── Entry CRUD ─────────────────────────────────────────────────────────────
-function addEntry(type) {
-  const now = new Date();
-  const today = `${now.getFullYear()}-${String(now.getMonth()+1).padStart(2,'0')}-${String(now.getDate()).padStart(2,'0')}`;
-  const e = { id: nextId++, date: today, type, days: 1, note: '' };
-  entries.push(e);
-  addEntryRow(e);
-  renderSummary();
-}
-
-function updateEntry(id, field, value) {
-  const e = entries.find(e => e.id === id);
-  if (!e) return;
-  e[field] = field === 'days' ? parseFloat(value) || 0 : value;
-  renderSummary();
-}
-
-function removeEntry(id) {
-  entries = entries.filter(e => e.id !== id);
-  const row = document.getElementById(`erow-${id}`);
-  if (row) {
-    const inp = row.querySelector(`#fp-${id}`);
-    if (inp && inp._flatpickr) inp._flatpickr.destroy();
-    row.remove();
+// ── Flatpickr setup ────────────────────────────────────────────────────────
+const FP_CONFIG = {
+  locale: 'lt',
+  dateFormat: 'Y-m-d',
+  allowInput: true,
+  onReady(_sel, _str, fp) {
+    fp.altInput
+      ? fp.altInput.addEventListener('input', () => liveJump(fp))
+      : fp.input.addEventListener('input', () => liveJump(fp));
   }
-  $('noEntries').style.display = entries.length ? 'none' : 'block';
-  renderSummary();
+};
+
+function liveJump(fp) {
+  const raw = fp.input.value.trim();
+  if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) return;
+  const d = new Date(raw);
+  if (!isNaN(d)) fp.jumpToDate(d);
 }
 
-// ── Excel import ──────────────────────────────────────────────────────────
+flatpickr('#startDate', {
+  ...FP_CONFIG,
+  onChange: ([d]) => {
+    if (!d) return;
+    // Update first norm fromDate to match hire date if it equals old hire date or is empty
+    if (norms.length > 0) {
+      const first = norms[0];
+      if (!first.fromDate || first.fromDate === $('startDate').value) {
+        first.fromDate = fmtDate(d);
+        renderNorms();
+      }
+    }
+    checkPre2010();
+    renderSummary();
+  }
+});
+
+flatpickr('#startBalDate', {
+  ...FP_CONFIG,
+  onChange: () => { renderSummary(); }
+});
+
+// ── Pre-2010 ───────────────────────────────────────────────────────────────
+function checkPre2010() {
+  const val  = $('startDate').value;
+  const show = val && new Date(val) < new Date('2010-01-01');
+  $('pre2010Card').style.display = show ? '' : 'none';
+  if (!show) {
+    $('pre2010Extra').value = 0;
+    $('pre2010Used').value  = 0;
+  }
+}
+
+// ── Excel Import ───────────────────────────────────────────────────────────
 function importExcel(input) {
   const file = input.files[0];
   if (!file) return;
-  input.value = '';   // reset so same file can be re-imported
-
-  const statusEl = document.getElementById('importStatus');
+  input.value = '';
+  const statusEl = $('importStatus');
   statusEl.className = 'import-status';
   statusEl.style.display = 'none';
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function(ev) {
     try {
-      const wb = XLSX.read(e.target.result, { type: 'array', cellDates: true });
+      const wb = XLSX.read(ev.target.result, { type:'array', cellDates:true });
       const ws = wb.Sheets[wb.SheetNames[0]];
-      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: null });
+      const rows = XLSX.utils.sheet_to_json(ws, { header:1, defval:null });
 
-      // Find first data row (skip title / header rows)
-      // Header contains "Pradžios data" or date-like values
       let dataStart = 0;
       for (let i = 0; i < rows.length; i++) {
         const cell = rows[i][0];
@@ -724,27 +1200,21 @@ function importExcel(input) {
         }
       }
 
-      // Collect unique entries: key = "startDate|endDate|days"
       const seen = new Set(entries.map(en => `${en.date}|${en.days}`));
-      let added = 0;
-      let skipped = 0;
+      let added = 0, skipped = 0;
 
       for (let i = dataStart; i < rows.length; i++) {
         const [startRaw, endRaw, daysRaw] = rows[i];
         if (!startRaw) continue;
-
-        const startDate = formatDate(startRaw);
-        const endDate   = formatDate(endRaw);
+        const startDate = formatDateVal(startRaw);
+        const endDate   = formatDateVal(endRaw);
         const days      = parseFloat(daysRaw);
-
         if (!startDate || isNaN(days)) continue;
-
         const key = `${startDate}|${days}`;
         if (seen.has(key)) { skipped++; continue; }
         seen.add(key);
-
         const note = endDate && endDate !== startDate ? `${startDate} – ${endDate}` : startDate;
-        entries.push({ id: nextId++, date: startDate, type: 'used', days, note });
+        entries.push({ id: nextId++, date: startDate, endDate: '', type: 'used', days, daysPerYear: 1, note });
         added++;
       }
 
@@ -768,98 +1238,44 @@ function importExcel(input) {
   reader.readAsArrayBuffer(file);
 }
 
-function formatDate(val) {
+function formatDateVal(val) {
   if (!val) return null;
-  if (val instanceof Date) {
-    const y = val.getFullYear();
-    const m = String(val.getMonth() + 1).padStart(2, '0');
-    const d = String(val.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  }
-  // Already a string like "2021-06-18"
+  if (val instanceof Date) return fmtDate(val);
   const s = String(val).trim();
   if (/^\d{4}-\d{2}-\d{2}$/.test(s)) return s;
-  // Try parsing
   const dt = new Date(s);
-  if (!isNaN(dt)) return formatDate(dt);
+  if (!isNaN(dt)) return fmtDate(dt);
   return null;
 }
 
-// ── Flatpickr setup ───────────────────────────────────────────────────────
-const FP_CONFIG = {
-  locale: 'lt',
-  dateFormat: 'Y-m-d',
-  allowInput: true,
-  onReady(_sel, _str, fp) {
-    // Navigate calendar in real-time as user types a valid date
-    fp.altInput ? fp.altInput.addEventListener('input', () => liveJump(fp))
-                : fp.input.addEventListener('input', () => liveJump(fp));
-  }
-};
-
-function liveJump(fp) {
-  const raw = fp.input.value.trim();
-  // Accept YYYY-MM-DD or YYYY-M-D
-  if (!/^\d{4}-\d{1,2}-\d{1,2}$/.test(raw)) return;
-  const d = new Date(raw);
-  if (!isNaN(d)) fp.jumpToDate(d);
-}
-
-flatpickr('#startDate', {
-  ...FP_CONFIG,
-  onChange: () => { checkPre2010(); renderSummary(); }
-});
-
-// ── Live recalc on main inputs ─────────────────────────────────────────────
-['annualDays'].forEach(id => {
-  $(id).addEventListener('input', renderSummary);
-});
-
-// ── Pre-2010 card visibility ───────────────────────────────────────────────
-function checkPre2010() {
-  const val  = $('startDate').value;
-  const show = val && new Date(val) < new Date('2010-01-01');
-  $('pre2010Card').style.display = show ? '' : 'none';
-  if (!show) {
-    $('pre2010Extra').value = 0;
-    $('pre2010Used').value  = 0;
-  }
-}
-
-// ── Init ───────────────────────────────────────────────────────────────────
-const d = new Date();
-d.setFullYear(d.getFullYear() - 1);
-$('startDate').value = `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-
-checkPre2010();
-renderEntries();
-renderSummary();
-
-// ── PDF export ───────────────────────────────────────────────────────
+// ── Excel Export ───────────────────────────────────────────────────────────
 function exportExcel() {
-  const name       = $('empName').value   || '';
-  const tab        = $('empTab').value    || '';
-  const startVal   = $('startDate').value || '';
-  const annualDays = parseFloat($('annualDays').value) || 0;
-
+  const name     = $('empName').value   || '';
+  const tab      = $('empTab').value    || '';
+  const startVal = $('startDate').value || '';
   const wb = XLSX.utils.book_new();
 
-  // ── Sheet 1: Suvestinė ───────────────────────────────────────────────────
+  // Sheet 1: Suvestinė
+  const normsSummary = norms.map(n => `${n.fromDate}: ${n.days} ${n.typeLabel}`).join('; ');
   const showPre2010x  = $('pre2010Card').style.display !== 'none';
-  const pre2010ExtraX = showPre2010x ? (parseFloat($('pre2010Extra').value) || 0) : 0;
-  const pre2010UsedX  = showPre2010x ? (parseFloat($('pre2010Used').value)  || 0) : 0;
+  const pre2010ExtraX = showPre2010x ? (parseFloat($('pre2010Extra').value)||0) : 0;
+  const pre2010UsedX  = showPre2010x ? (parseFloat($('pre2010Used').value) ||0) : 0;
 
   const sum1 = [
-    ['Tabelinis Nr.',   tab],
-    ['Vardas',         name],
-    ['Įdarbinimo data', startVal],
-    ['Metinė norma (d.d.)', annualDays],
+    ['Tabelinis Nr.',     tab],
+    ['Vardas',           name],
+    ['Įdarbinimo data',  startVal],
+    ['Atostogų normos',  normsSummary],
+    ['Pradinio likučio data', $('startBalDate').value || ''],
+    ['Pradinis likutis', parseFloat($('startBalDays').value)||0],
     [],
     ['', 'Sukauptos', 'Papildomos', 'Panaudotos', 'Likutis'],
-    ['', parseFloat($('sAccrued').textContent) || 0,
-         parseFloat($('sExtra').textContent)   || 0,
-         parseFloat($('sUsed').textContent)    || 0,
-         parseFloat($('sBalance').textContent) || 0],
+    ['',
+      parseFloat($('sAccrued').textContent)||0,
+      parseFloat($('sExtra').textContent)||0,
+      parseFloat($('sUsed').textContent)||0,
+      parseFloat($('sBalance').textContent)||0
+    ],
     ...(showPre2010x ? [
       [],
       ['Laikotarpis iki 2009-12-31'],
@@ -869,173 +1285,119 @@ function exportExcel() {
     ] : []),
   ];
   const ws1 = XLSX.utils.aoa_to_sheet(sum1);
-  ws1['!cols'] = [{wch:22},{wch:14},{wch:14},{wch:14},{wch:14}];
+  ws1['!cols'] = [{wch:24},{wch:40}];
   XLSX.utils.book_append_sheet(wb, ws1, 'Suvestinė');
 
-  // ── Sheet 2: Kaupimas pagal darbo metus ──────────────────────────────────
-  const wyRows = [['Nr.', 'Laikotarpis nuo', 'Laikotarpis iki', 'Sukaupta d.d.', 'Papild. d.d.', '% normos', 'Nepilni']];
-  if (startVal && annualDays) {
-    const sd = new Date(startVal);
-    sd.setHours(0, 0, 0, 0);
-    const segs = computeAccrual(sd, annualDays);
+  // Sheet 2: Normos
+  const normRows = [['Galioja nuo','Dienos/metus','Tipas']];
+  norms.forEach(n => normRows.push([n.fromDate, n.days, n.typeLabel]));
+  const ws2 = XLSX.utils.aoa_to_sheet(normRows);
+  ws2['!cols'] = [{wch:14},{wch:14},{wch:10}];
+  XLSX.utils.book_append_sheet(wb, ws2, 'Normos');
+
+  // Sheet 3: Kaupimas pagal darbo metus
+  const startDate = parseDate(startVal);
+  const sortedNorms = norms
+    .map(n => ({ ...n, fromDate: parseDate(n.fromDate) || startDate }))
+    .filter(n => n.fromDate).sort((a,b) => a.fromDate - b.fromDate);
+  const nonAcc = buildNonAccruingPeriods(entries);
+  const wyRows = [['Nr.','Laikotarpis nuo','Laikotarpis iki','Sukaupta','Papild.','%','Nepilni']];
+  if (startDate && sortedNorms.length) {
+    const segs = computeAccrual(startDate, sortedNorms, nonAcc);
     const wyMap = {};
     segs.forEach(seg => {
-      if (!wyMap[seg.wyIndex]) {
-        wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, segDaysTotal: 0 };
-      }
-      wyMap[seg.wyIndex].accrued      += seg.accrued;
-      wyMap[seg.wyIndex].segDaysTotal += seg.segDays;
+      if (!wyMap[seg.wyIndex]) wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, workedTotal: 0 };
+      wyMap[seg.wyIndex].accrued += seg.accrued;
+      wyMap[seg.wyIndex].workedTotal += seg.workedDays;
     });
-    const extraByWY = {};
-    entries.filter(en => en.type === 'extra').forEach(en => {
-      if (!en.date) return;
-      const entryDate = new Date(en.date); entryDate.setHours(0,0,0,0);
-      Object.values(wyMap).forEach(wy => {
-        const wyEnd = new Date(wy.wyStartDate);
-        wyEnd.setFullYear(wyEnd.getFullYear() + 1);
-        if (entryDate >= wy.wyStartDate && entryDate < wyEnd)
-          extraByWY[wy.wyIndex] = (extraByWY[wy.wyIndex] || 0) + (parseFloat(en.days) || 0);
-      });
-    });
-    let totalAcc = 0, totalExt = 0;
     Object.values(wyMap).forEach(wy => {
       const wyEnd = new Date(wy.wyStartDate);
-      wyEnd.setFullYear(wyEnd.getFullYear() + 1);
-      wyEnd.setDate(wyEnd.getDate() - 1);
-      const isPartial = wy.segDaysTotal < wy.wyTotalDays;
-      const pct       = Math.round((wy.segDaysTotal / wy.wyTotalDays) * 100);
-      const toDate    = isPartial ? new Date() : wyEnd;
-      const extra     = extraByWY[wy.wyIndex] || 0;
-      totalAcc += wy.accrued; totalExt += extra;
-      wyRows.push([
-        wy.wyIndex,
-        wy.wyStartDate,
-        toDate,
-        Math.round(wy.accrued * 100) / 100,
-        extra || '',
-        pct / 100,
-        isPartial ? 'Taip' : ''
-      ]);
+      wyEnd.setFullYear(wyEnd.getFullYear()+1);
+      wyEnd.setDate(wyEnd.getDate()-1);
+      const isPartial = wy.workedTotal < wy.wyTotalDays;
+      const pct = Math.round((wy.workedTotal / wy.wyTotalDays)*100)/100;
+      const toDate = isPartial ? new Date() : wyEnd;
+      wyRows.push([wy.wyIndex, wy.wyStartDate, toDate, Math.round(wy.accrued*100)/100, '', pct, isPartial?'Taip':'']);
     });
-    wyRows.push(['', 'Iš viso:', '', Math.round(totalAcc * 100) / 100, totalExt || '', '', '']);
   }
-  const ws2 = XLSX.utils.aoa_to_sheet(wyRows);
-  ws2['!cols'] = [{wch:6},{wch:14},{wch:14},{wch:14},{wch:12},{wch:10},{wch:10}];
-  // Format date columns and percent column
-  const dateStyle = { numFmt: 'yyyy-mm-dd' };
-  const pctStyle  = { numFmt: '0%' };
-  for (let r = 1; r < wyRows.length - 1; r++) {
-    const R = r + 1;
-    ['B','C'].forEach(col => {
-      const cell = ws2[col + R];
-      if (cell) cell.z = 'yyyy-mm-dd';
-    });
-    const pcell = ws2['F' + R];
-    if (pcell) pcell.z = '0%';
-  }
-  XLSX.utils.book_append_sheet(wb, ws2, 'Kaupimas pagal darbo metus');
+  const ws3 = XLSX.utils.aoa_to_sheet(wyRows);
+  ws3['!cols'] = [{wch:6},{wch:14},{wch:14},{wch:12},{wch:10},{wch:8},{wch:8}];
+  XLSX.utils.book_append_sheet(wb, ws3, 'Kaupimas pagal darbo metus');
 
-  // ── Sheet 3: Įrašai ──────────────────────────────────────────────────────
-  const entryRows = [['Data', 'Tipas', 'Dienos', 'Pastaba']];
-  entries.forEach(e => entryRows.push([
-    e.date,
-    e.type === 'used' ? 'Panaudotos' : 'Papildomos',
-    Math.round((parseFloat(e.days) || 0) * 100) / 100,
-    e.note || ''
-  ]));
-  const ws3 = XLSX.utils.aoa_to_sheet(entryRows);
-  ws3['!cols'] = [{wch:12},{wch:14},{wch:10},{wch:40}];
-  XLSX.utils.book_append_sheet(wb, ws3, 'Įrašai');
+  // Sheet 4: Įrašai
+  const entryRows = [['Data','Iki','Tipas','Dienos / d.d.p.m.','Pastaba']];
+  entries.forEach(e => {
+    const typeMap = {used:'Panaudotos',extra:'Papildomos',unpaid:'Neapmokamos',absence:'Pravaikšta'};
+    const dias = (e.type==='extra' && e.endDate) ? (e.daysPerYear||0) : (e.type==='used'||e.type==='extra') ? (e.days||0) : '–';
+    entryRows.push([e.date, e.endDate||'', typeMap[e.type]||e.type, dias, e.note||'']);
+  });
+  const ws4 = XLSX.utils.aoa_to_sheet(entryRows);
+  ws4['!cols'] = [{wch:12},{wch:12},{wch:14},{wch:16},{wch:40}];
+  XLSX.utils.book_append_sheet(wb, ws4, 'Įrašai');
 
-  const fileName = `ataskaita${name ? '_' + name.replace(/\s+/g,'_') : ''}.xlsx`;
+  const fileName = `ataskaita${name?'_'+name.replace(/\s+/g,'_'):''}.xlsx`;
   XLSX.writeFile(wb, fileName);
 }
 
+// ── PDF Export ─────────────────────────────────────────────────────────────
 function exportPDF() {
   const name    = $('empName').value   || '–';
   const tab     = $('empTab').value    || '–';
   const start   = $('startDate').value || '–';
-  const annual  = $('annualDays').value || '–';
   const accrued = $('sAccrued').textContent;
   const extra   = $('sExtra').textContent;
   const used    = $('sUsed').textContent;
   const balance = $('sBalance').textContent;
   const today   = new Date().toLocaleDateString('lt-LT');
 
-  // ── Work-year breakdown table ────────────────────────────────────────────
+  const normsSummary = norms.map(n => `Nuo ${n.fromDate}: <b>${n.days} ${n.typeLabel}/m.</b>`).join(' &nbsp;|&nbsp; ');
+
+  // Work-year table
   let workYearRows = '';
   let hasPartialWY = false;
-  const startVal2   = $('startDate').value;
-  const annualDays2 = parseFloat($('annualDays').value) || 0;
-  if (startVal2 && annualDays2) {
-    const sd2 = new Date(startVal2);
-    sd2.setHours(0, 0, 0, 0);
-    const segs2 = computeAccrual(sd2, annualDays2);
+  const startDate = parseDate($('startDate').value);
+  const sortedNorms = norms
+    .map(n => ({ ...n, fromDate: parseDate(n.fromDate) || startDate }))
+    .filter(n => n.fromDate).sort((a,b) => a.fromDate - b.fromDate);
+  if (startDate && sortedNorms.length) {
+    const segs = computeAccrual(startDate, sortedNorms, buildNonAccruingPeriods(entries));
     const wyMap = {};
-    segs2.forEach(seg => {
-      if (!wyMap[seg.wyIndex]) {
-        wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, segDaysTotal: 0 };
-      }
-      wyMap[seg.wyIndex].accrued      += seg.accrued;
-      wyMap[seg.wyIndex].segDaysTotal += seg.segDays;
+    segs.forEach(seg => {
+      if (!wyMap[seg.wyIndex]) wyMap[seg.wyIndex] = { wyIndex: seg.wyIndex, wyStartDate: seg.wyStartDate, wyTotalDays: seg.wyTotalDays, accrued: 0, workedTotal: 0 };
+      wyMap[seg.wyIndex].accrued += seg.accrued;
+      wyMap[seg.wyIndex].workedTotal += seg.workedDays;
     });
-    // Map extra entries to work years
-    const extraByWY = {};
-    entries.filter(en => en.type === 'extra').forEach(en => {
-      if (!en.date) return;
-      const entryDate = new Date(en.date);
-      entryDate.setHours(0, 0, 0, 0);
-      Object.values(wyMap).forEach(wy => {
-        const wyEnd = new Date(wy.wyStartDate);
-        wyEnd.setFullYear(wyEnd.getFullYear() + 1);
-        if (entryDate >= wy.wyStartDate && entryDate < wyEnd) {
-          extraByWY[wy.wyIndex] = (extraByWY[wy.wyIndex] || 0) + (parseFloat(en.days) || 0);
-        }
-      });
-    });
-
     const wyList = Object.values(wyMap);
     workYearRows = wyList.map(wy => {
-      const wyEndDate = new Date(wy.wyStartDate);
-      wyEndDate.setFullYear(wyEndDate.getFullYear() + 1);
-      wyEndDate.setDate(wyEndDate.getDate() - 1);
-      const isPartial = wy.segDaysTotal < wy.wyTotalDays;
+      const wyEnd = new Date(wy.wyStartDate);
+      wyEnd.setFullYear(wyEnd.getFullYear()+1);
+      wyEnd.setDate(wyEnd.getDate()-1);
+      const isPartial = wy.workedTotal < wy.wyTotalDays;
       if (isPartial) hasPartialWY = true;
-      const pct       = Math.round((wy.segDaysTotal / wy.wyTotalDays) * 100);
-      const toStr     = isPartial
-        ? new Date().toLocaleDateString('lt-LT') + ' *'
-        : wyEndDate.toLocaleDateString('lt-LT');
-      const extraDays = extraByWY[wy.wyIndex] || 0;
-      const extraCell = extraDays ? `<b>${extraDays.toFixed(2)}</b>` : '<span style="color:#bbb">–</span>';
+      const pct = Math.round((wy.workedTotal / wy.wyTotalDays)*100);
+      const toStr = isPartial ? new Date().toLocaleDateString('lt-LT')+' *' : wyEnd.toLocaleDateString('lt-LT');
       return `<tr>
         <td style="text-align:center;color:#888">${wy.wyIndex}</td>
         <td>${wy.wyStartDate.toLocaleDateString('lt-LT')} &ndash; ${toStr}</td>
         <td style="text-align:right">${wy.accrued.toFixed(2)}</td>
-        <td style="text-align:right">${extraCell}</td>
         <td style="text-align:center;color:#888">${pct}%</td>
       </tr>`;
     }).join('');
-
-    // Summary row
-    const totalWYAccrued = wyList.reduce((s, wy) => s + wy.accrued, 0);
-    const totalWYExtra   = Object.values(extraByWY).reduce((s, v) => s + v, 0);
+    const totalAcc = wyList.reduce((s,w)=>s+w.accrued,0);
     workYearRows += `<tr style="font-weight:700;background:#f5f5f5;border-top:2px solid #FFDD00">
-      <td colspan="2" style="text-align:right;color:#555;font-size:8.5px;text-transform:uppercase;letter-spacing:.4px">Iš viso:</td>
-      <td style="text-align:right">${totalWYAccrued.toFixed(2)}</td>
-      <td style="text-align:right">${totalWYExtra ? totalWYExtra.toFixed(2) : '<span style="color:#bbb">–</span>'}</td>
+      <td colspan="2" style="text-align:right;color:#555;font-size:8.5px;text-transform:uppercase">Iš viso:</td>
+      <td style="text-align:right">${totalAcc.toFixed(2)}</td>
       <td></td>
     </tr>`;
   }
-  const partialNote = hasPartialWY
-    ? '<p style="font-size:8px;color:#aaa;margin-top:5px">* Nepilni darbo metai &ndash; skaičiuota iki šiandien</p>'
-    : '';
+  const partialNote = hasPartialWY ? '<p style="font-size:8px;color:#aaa;margin-top:5px">* Nepilni darbo metai – skaičiuota iki šiandien</p>' : '';
 
-  // ── Calendar-year summary table ───────────────────────────────────────────
+  // Calendar year table from DOM
   const yearRows = Array.from($('yearBody').querySelectorAll('tr:not(.yr-detail)')).map(tr => {
     const cells = tr.querySelectorAll('td');
-    if (cells.length < 6) return ''; // skip sub-rows
-    const bal   = cells[5];
-    const cls   = bal.classList.contains('negative') ? 'color:#c00' : 'color:#1a7a3f';
+    if (cells.length < 6) return '';
+    const bal = cells[5];
+    const cls = bal.classList.contains('negative') ? 'color:#c00' : 'color:#1a7a3f';
     return `<tr>
       <td>${cells[1].textContent}</td>
       <td>${cells[2].textContent}</td>
@@ -1045,14 +1407,21 @@ function exportPDF() {
     </tr>`;
   }).join('');
 
-  const entryRows = entries.length
-    ? entries.map(e => `<tr>
-        <td>${e.date}</td>
-        <td>${e.type === 'used' ? 'Panaudotos' : 'Papildomos'}</td>
-        <td>${(+e.days).toFixed(2)}</td>
-        <td>${e.note || '–'}</td>
-      </tr>`).join('')
-    : '<tr><td colspan="4" style="color:#aaa;text-align:center">Įrašų nėra</td></tr>';
+  const typeLabels = {used:'Panaudotos',extra:'Papildomos',unpaid:'Neapmokamos',absence:'Pravaikšta'};
+  const entryRowsHtml = entries.length
+    ? entries.map(e => {
+        const dias = (e.type==='extra' && e.endDate)
+          ? `${e.daysPerYear||0} d.d./m.`
+          : (e.type==='used'||e.type==='extra') ? `${(+e.days).toFixed(2)}` : '–';
+        return `<tr>
+          <td>${e.date}</td>
+          <td>${e.endDate||'–'}</td>
+          <td>${typeLabels[e.type]||e.type}</td>
+          <td>${dias}</td>
+          <td>${e.note||'–'}</td>
+        </tr>`;
+      }).join('')
+    : '<tr><td colspan="5" style="color:#aaa;text-align:center">Įrašų nėra</td></tr>';
 
   const html = `<!DOCTYPE html>
 <html lang="lt"><head><meta charset="UTF-8"/><title>Ataskaita</title>
@@ -1065,8 +1434,8 @@ function exportPDF() {
   .hdr .meta{font-size:9px;color:#888}
   .sec{margin-bottom:18px}
   .stitle{font-size:8.5px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;color:#888;border-bottom:1px solid #eee;padding-bottom:3px;margin-bottom:10px}
-  .info-row{display:flex;gap:12px;margin-bottom:14px}
-  .info-item{flex:1}
+  .info-row{display:flex;gap:12px;margin-bottom:14px;flex-wrap:wrap}
+  .info-item{flex:1;min-width:120px}
   .lbl{font-size:8px;color:#aaa;text-transform:uppercase;letter-spacing:.4px}
   .val{font-size:12px;font-weight:700;margin-top:1px}
   .stats{display:flex;gap:8px}
@@ -1089,7 +1458,7 @@ function exportPDF() {
     <div class="info-item"><div class="lbl">Tabelinis Nr.</div><div class="val">${tab}</div></div>
     <div class="info-item"><div class="lbl">Vardas</div><div class="val">${name}</div></div>
     <div class="info-item"><div class="lbl">Įdarbinimo data</div><div class="val">${start}</div></div>
-    <div class="info-item"><div class="lbl">Metinė norma (d.d.)</div><div class="val">${annual}</div></div>
+    <div class="info-item"><div class="lbl">Atostogų normos</div><div class="val" style="font-size:10px">${normsSummary}</div></div>
   </div>
 </div>
 <div class="sec">
@@ -1103,8 +1472,8 @@ function exportPDF() {
 </div>
 <div class="sec">
   <div class="stitle">Atostogų įrašai</div>
-  <table><thead><tr><th>Data</th><th>Tipas</th><th>Dienos</th><th>Pastaba</th></tr></thead>
-  <tbody>${entryRows}</tbody></table>
+  <table><thead><tr><th>Nuo</th><th>Iki</th><th>Tipas</th><th>Dienos</th><th>Pastaba</th></tr></thead>
+  <tbody>${entryRowsHtml}</tbody></table>
 </div>
 <div class="sec">
   <div class="stitle">Kaupimas pagal darbo metus</div>
@@ -1112,16 +1481,15 @@ function exportPDF() {
     <th style="text-align:center;width:32px">Nr.</th>
     <th>Laikotarpis</th>
     <th style="text-align:right">Sukaupta d.d.</th>
-    <th style="text-align:right">Papild. d.d.</th>
     <th style="text-align:center">% normos</th>
   </tr></thead>
-  <tbody>${workYearRows || '<tr><td colspan="5" style="color:#aaa;text-align:center">N\u0117ra duomen\u0173</td></tr>'}</tbody></table>
+  <tbody>${workYearRows||'<tr><td colspan="4" style="color:#aaa;text-align:center">Nėra duomenų</td></tr>'}</tbody></table>
   ${partialNote}
 </div>
 <div class="sec">
   <div class="stitle">Metinis kaupimas (pagal kalendorinius metus)</div>
   <table><thead><tr><th>Metai</th><th>Sukauptos</th><th>Papild.</th><th>Panaudotos</th><th style="text-align:right">Likutis</th></tr></thead>
-  <tbody>${yearRows}</tbody></table>
+  <tbody>${yearRows||'<tr><td colspan="5" style="color:#aaa;text-align:center">Nėra duomenų</td></tr>'}</tbody></table>
 </div>
 <div class="footer">Atostogų likučio skaičiuoklė</div>
 </body></html>`;
@@ -1132,6 +1500,105 @@ function exportPDF() {
   win.focus();
   setTimeout(() => win.print(), 600);
 }
+
+// ── Save / Load / Clear JSON ──────────────────────────────────────────────
+function collectState() {
+  return {
+    empTab:       $('empTab').value,
+    empName:      $('empName').value,
+    startDate:    $('startDate').value,
+    startBalDate: $('startBalDate').value,
+    startBalDays: $('startBalDays').value,
+    pre2010Extra: $('pre2010Extra').value,
+    pre2010Used:  $('pre2010Used').value,
+    norms,
+    entries,
+    nextId,
+    savedAt: new Date().toISOString()
+  };
+}
+
+function applyState(s) {
+  $('empTab').value       = s.empTab       || '';
+  $('empName').value      = s.empName      || '';
+  $('startDate').value    = s.startDate    || '';
+  $('startBalDate').value = s.startBalDate || '';
+  $('startBalDays').value = s.startBalDays || '';
+  $('pre2010Extra').value = s.pre2010Extra || 0;
+  $('pre2010Used').value  = s.pre2010Used  || 0;
+  norms   = s.norms   || [];
+  entries = s.entries || [];
+  nextId  = s.nextId  || 1;
+
+  const fpSD = document.querySelector('#startDate')._flatpickr;
+  if (fpSD) fpSD.setDate(s.startDate || '', false);
+  const fpSB = document.querySelector('#startBalDate')._flatpickr;
+  if (fpSB) fpSB.setDate(s.startBalDate || '', false);
+
+  checkPre2010();
+  renderNorms();
+  renderEntries();
+  renderSummary();
+}
+
+function saveJSON() {
+  const state = collectState();
+  const blob  = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const name  = ($('empName').value || 'darbuotojas').replace(/\s+/g, '_');
+  const a     = document.createElement('a');
+  a.href      = URL.createObjectURL(blob);
+  a.download  = `atostogos_${name}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+function loadJSON(input) {
+  const file = input.files[0];
+  if (!file) return;
+  input.value = '';
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      applyState(JSON.parse(e.target.result));
+    } catch {
+      alert('Klaida skaitant failą. Patikrinkite ar tai teisingas atostogų skaičiuoklės failas.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function clearAll() {
+  if (!confirm('Išvalyti visus formos duomenis? Neišsaugoti duomenys bus prarasti.')) return;
+  entries = []; norms = []; nextId = 1;
+  ['empTab','empName','startBalDate','startBalDays','pre2010Extra','pre2010Used'].forEach(id => { $(id).value = ''; });
+  const fpSD = document.querySelector('#startDate')._flatpickr;
+  if (fpSD) fpSD.clear(); else $('startDate').value = '';
+  const fpSB = document.querySelector('#startBalDate')._flatpickr;
+  if (fpSB) fpSB.clear();
+  const initDate = new Date();
+  initDate.setFullYear(initDate.getFullYear() - 1);
+  const d = fmtDate(initDate);
+  $('startDate').value = d;
+  if (fpSD) fpSD.setDate(d, false);
+  addNorm(d, 20, 'd.d.');
+  checkPre2010();
+  renderEntries();
+  renderSummary();
+}
+
+// placeholder so renderSummary scheduleAutoSave call doesn't throw
+function scheduleAutoSave() {}
+
+// ── Init ──────────────────────────────────────────────────────────────────
+const initDate = new Date();
+initDate.setFullYear(initDate.getFullYear() - 1);
+$('startDate').value = fmtDate(initDate);
+addNorm($('startDate').value, 20, 'd.d.');
+
+checkPre2010();
+renderNorms();
+renderEntries();
+renderSummary();
 </script>
 </body>
 </html>
