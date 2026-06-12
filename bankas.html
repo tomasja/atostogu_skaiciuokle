@@ -275,21 +275,29 @@ document.getElementById('folderInput').addEventListener('change', function() {
   buildPeriodPicker(allFolderFiles);
 });
 
+function extractYearMonth(f) {
+  // 1) Try folder path segments for a 4-digit year
+  const parts = f.webkitRelativePath.split('/');
+  for (let i = 1; i < parts.length - 1; i++) {
+    if (/^\d{4}$/.test(parts[i])) {
+      const month = parts[i+1] || '';
+      const mMatch = month.match(/(?:^\d{4}-(\d{2})|^(\d{2})$)/);
+      return { year: parts[i], monthNum: mMatch ? (mMatch[1]||mMatch[2]) : '00' };
+    }
+  }
+  // 2) Try filename: YYYYMMDD, YYYY-MM-DD, YYYY_MM, YYYY-MM
+  const name = f.name;
+  let m;
+  if ((m = name.match(/(\d{4})[_-]?(\d{2})[_-]?\d{2}/))) return { year: m[1], monthNum: m[2] };
+  if ((m = name.match(/(\d{4})[_-](\d{2})/)))              return { year: m[1], monthNum: m[2] };
+  if ((m = name.match(/(\d{4})/)))                          return { year: m[1], monthNum: '00' };
+  return { year: 'Kita', monthNum: '00' };
+}
+
 function buildPeriodPicker(files) {
-  // Group by year → month using webkitRelativePath
   const tree = {}; // { year: { month: [files] } }
   files.forEach(f => {
-    const parts = f.webkitRelativePath.split('/');
-    // Expect: rootFolder/year/month-folder/file.zip OR rootFolder/year/file.zip
-    // Determine year: first numeric-looking segment after root
-    let year = '', month = '';
-    for (let i = 1; i < parts.length - 1; i++) {
-      if (/^\d{4}$/.test(parts[i])) { year = parts[i]; month = parts[i+1] || ''; break; }
-    }
-    if (!year) year = 'Kita';
-    // Normalize month: extract MM from "2023-05" or "05" or "2023-05-01..." etc.
-    const mMatch = month.match(/(?:^\d{4}-(\d{2})|^(\d{2})$)/);
-    const monthNum = mMatch ? (mMatch[1] || mMatch[2]) : '00';
+    const { year, monthNum } = extractYearMonth(f);
     if (!tree[year]) tree[year] = {};
     if (!tree[year][monthNum]) tree[year][monthNum] = [];
     tree[year][monthNum].push(f);
