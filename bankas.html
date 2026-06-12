@@ -88,6 +88,12 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     .loaded-summary { margin: 0 24px 12px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 0.82rem; color: #555; }
     .loaded-summary .clear-all { cursor: pointer; color: #c62828; font-weight: 600; text-decoration: underline; }
 
+    .quick-reload { margin: 0 24px 16px; background: #e8f4e8; border: 1px solid #a5d6a7; border-radius: 8px; padding: 10px 16px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .quick-reload .qr-label { font-size: 0.78rem; color: #2e7d32; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    .quick-reload .qr-folder { font-size: 0.9rem; color: #1a3a5c; font-weight: 600; }
+    .quick-reload .qr-periods { font-size: 0.8rem; color: #555; flex: 1; }
+    .quick-reload .qr-forget { font-size: 0.78rem; color: #888; cursor: pointer; text-decoration: underline; margin-left: auto; white-space: nowrap; }
+
     .table-wrap { margin: 0 24px 24px; background: white; border-radius: 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: auto; max-height: calc(100vh - 280px); }
     table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
     thead th { background: #1a3a5c; color: white; padding: 10px 12px; text-align: left; white-space: nowrap; position: sticky; top: 0; cursor: pointer; user-select: none; }
@@ -142,6 +148,15 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <p>Galima įkelti kelis failus vienu metu.<br>Tinka kai norite peržiūrėti tik konkrečias dienas.</p>
     <input type="file" id="fileInput" accept=".zip,.xml" multiple style="display:none" />
   </div>
+</div>
+
+<!-- Quick reload bar (shown if localStorage has last session) -->
+<div class="quick-reload" id="quickReload" style="display:none">
+  <span class="qr-label">↺ Paskutinis</span>
+  <span class="qr-folder" id="qrFolder"></span>
+  <span class="qr-periods" id="qrPeriods"></span>
+  <button class="btn btn-green btn-sm" onclick="document.getElementById('folderInput').click()">Pasirinkti katalogą</button>
+  <span class="qr-forget" onclick="forgetLastSession()">Pamiršti</span>
 </div>
 
 <!-- Period picker shown after folder scan -->
@@ -258,6 +273,43 @@ https://github.com/nodeca/pako/blob/main/LICENSE
 <script>
 const MONTH_NAMES = ['','Sausis','Vasaris','Kovas','Balandis','Gegužė','Birželis','Liepa','Rugpjūtis','Rugsėjis','Spalis','Lapkritis','Gruodis'];
 
+// ── Last-session memory ───────────────────────────────────────────────────────
+function saveLastSession(folderName, selectedPeriods) {
+  try {
+    localStorage.setItem('lastFolderName', folderName);
+    localStorage.setItem('lastPeriods', JSON.stringify(selectedPeriods)); // [{year,month}]
+  } catch(e) {}
+}
+function loadLastSession() {
+  try {
+    const name = localStorage.getItem('lastFolderName');
+    const periods = JSON.parse(localStorage.getItem('lastPeriods') || 'null');
+    return name ? { name, periods: periods || [] } : null;
+  } catch(e) { return null; }
+}
+function forgetLastSession() {
+  try { localStorage.removeItem('lastFolderName'); localStorage.removeItem('lastPeriods'); } catch(e) {}
+  document.getElementById('quickReload').style.display = 'none';
+}
+function showQuickReload() {
+  const last = loadLastSession();
+  if (!last) return;
+  document.getElementById('qrFolder').textContent = last.name;
+  if (last.periods.length) {
+    const byYear = {};
+    last.periods.forEach(p => { if (!byYear[p.year]) byYear[p.year] = []; byYear[p.year].push(p.month); });
+    const summary = Object.entries(byYear).map(([y,ms]) => {
+      const mNames = ms.map(m => m==='00'?'Kita':(MONTH_NAMES[+m]||m)).join(', ');
+      return `${y}: ${mNames}`;
+    }).join(' · ');
+    document.getElementById('qrPeriods').textContent = summary;
+  } else {
+    document.getElementById('qrPeriods').textContent = '';
+  }
+  document.getElementById('quickReload').style.display = 'flex';
+}
+showQuickReload();
+
 let allTransactions = [];
 let filtered = [];
 let loadedFileNames = [];
@@ -272,7 +324,9 @@ document.getElementById('folderInput').addEventListener('change', function() {
   allFolderFiles = [...this.files].filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml'); });
   this.value = '';
   if (allFolderFiles.length === 0) { alert('Kataloge nerasta ZIP ar XML failų.'); return; }
-  buildPeriodPicker(allFolderFiles);
+  // Extract root folder name (first path segment)
+  const rootName = allFolderFiles[0]?.webkitRelativePath.split('/')[0] || '?';
+  buildPeriodPicker(allFolderFiles, rootName);
 });
 
 function extractYearMonth(f) {
@@ -294,7 +348,7 @@ function extractYearMonth(f) {
   return { year: 'Kita', monthNum: '00' };
 }
 
-function buildPeriodPicker(files) {
+function buildPeriodPicker(files, rootName) {
   const tree = {}; // { year: { month: [files] } }
   files.forEach(f => {
     const { year, monthNum } = extractYearMonth(f);
@@ -333,9 +387,29 @@ function buildPeriodPicker(files) {
     });
   });
 
-  // Store tree for later use
-  document.getElementById('periodPanel')._tree = tree;
-  document.getElementById('periodPanel').className = 'period-panel visible';
+  // Store tree and root name for later use
+  const panel = document.getElementById('periodPanel');
+  panel._tree = tree;
+  panel._rootName = rootName || '?';
+  panel.className = 'period-panel visible';
+
+  // Auto-restore last selected periods if folder name matches
+  const last = loadLastSession();
+  if (last && last.name === (rootName || '?') && last.periods.length) {
+    // Uncheck all first
+    document.querySelectorAll('.month-cb').forEach(m => { m.checked = false; m.closest('.month-chip').className = 'month-chip'; });
+    // Re-check matching
+    last.periods.forEach(({year, month}) => {
+      const cb = document.querySelector(`.month-cb[data-year="${year}"][data-month="${month}"]`);
+      if (cb) { cb.checked = true; cb.closest('.month-chip').className = 'month-chip selected'; }
+    });
+    document.querySelectorAll('.year-cb').forEach(ycb => {
+      const y = ycb.dataset.year;
+      const all = [...document.querySelectorAll(`.month-cb[data-year="${y}"]`)];
+      ycb.checked = all.every(m => m.checked);
+      ycb.indeterminate = !ycb.checked && all.some(m => m.checked);
+    });
+  }
   updatePeriodInfo();
 }
 
@@ -383,15 +457,22 @@ function selectAllPeriods(on) {
 }
 
 async function loadSelectedPeriods() {
-  const tree = document.getElementById('periodPanel')._tree;
+  const panel = document.getElementById('periodPanel');
+  const tree = panel._tree;
   const selected = [];
+  const selectedPeriods = [];
   document.querySelectorAll('.month-cb:checked').forEach(cb => {
     const arr = (tree[cb.dataset.year] || {})[cb.dataset.month] || [];
     selected.push(...arr);
+    if (arr.length) selectedPeriods.push({ year: cb.dataset.year, month: cb.dataset.month });
   });
   if (selected.length === 0) { alert('Nepasirinktas nė vienas mėnuo.'); return; }
 
-  document.getElementById('periodPanel').className = 'period-panel';
+  // Save this session for quick reload next time
+  saveLastSession(panel._rootName || '?', selectedPeriods);
+  showQuickReload();
+
+  panel.className = 'period-panel';
   showProgress(true);
   for (let i = 0; i < selected.length; i++) {
     const f = selected[i];
