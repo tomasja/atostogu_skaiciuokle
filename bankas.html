@@ -125,6 +125,27 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     .page-btn.active { background: #1a3a5c; color: white; border-color: #1a3a5c; }
     .page-btn:disabled { opacity: 0.4; cursor: default; }
     select#pageSize { min-width: 80px; }
+
+    .tab-bar { margin: 0 24px 0; display: flex; gap: 0; border-bottom: 2px solid #1a3a5c; }
+    .tab-btn { padding: 8px 24px; border: none; background: none; cursor: pointer; font-size: 0.9rem; font-weight: 600; color: #666; border-radius: 6px 6px 0 0; transition: background 0.15s, color 0.15s; }
+    .tab-btn:hover { background: #e8f0f8; color: #1a3a5c; }
+    .tab-btn.active { background: #1a3a5c; color: white; }
+
+    .pivot-wrap { margin: 0 24px 24px; background: white; border-radius: 0 8px 8px 8px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); overflow: auto; max-height: calc(100vh - 280px); }
+    .pivot-wrap table { width: max-content; min-width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .pivot-wrap thead th { background: #1a3a5c; color: white; padding: 8px 10px; text-align: right; white-space: nowrap; position: sticky; top: 0; z-index: 2; }
+    .pivot-wrap thead th.col-loc { text-align: left; position: sticky; top: 0; left: 0; z-index: 3; min-width: 260px; max-width: 340px; }
+    .pivot-wrap tbody td { padding: 6px 10px; border-bottom: 1px solid #eef0f3; text-align: right; white-space: nowrap; }
+    .pivot-wrap tbody td.col-loc { text-align: left; position: sticky; left: 0; background: white; z-index: 1; font-size: 0.8rem; min-width: 260px; max-width: 340px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; border-right: 2px solid #e0e7ef; }
+    .pivot-wrap tbody tr:nth-child(even) td { background: #f8f9fb; }
+    .pivot-wrap tbody tr:nth-child(even) td.col-loc { background: #f8f9fb; }
+    .pivot-wrap tbody tr:hover td { background: #eef4ff; }
+    .pivot-wrap tbody tr:hover td.col-loc { background: #eef4ff; }
+    .pivot-wrap tbody tr.pivot-total td { background: #1a3a5c !important; color: white; font-weight: 700; position: sticky; bottom: 0; z-index: 2; }
+    .pivot-wrap tbody tr.pivot-total td.col-loc { background: #1a3a5c !important; color: white; z-index: 3; }
+    .pivot-cell-val { font-weight: 600; color: #2e7d32; }
+    .pivot-cell-empty { color: #ccc; }
+    .pivot-col-total { background: #e8f0f8 !important; font-weight: 700; color: #1a3a5c; border-left: 2px solid #b0c4de; }
   </style>
 </head>
 <body>
@@ -238,11 +259,16 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <span>Tik dublikatai</span>
   </label>
   <div style="margin-left:auto;display:flex;gap:8px;align-items:flex-end">
-    <button class="btn btn-green btn-sm" onclick="exportCSV()">⬇ CSV</button>
-    <button class="btn btn-sm" style="background:#c62828;color:white" onclick="exportPDF()">⬇ PDF</button>
+    <button class="btn btn-green btn-sm" onclick="activeTab==='pivot'?exportPivotCSV():exportCSV()">⬇ CSV</button>
+    <button class="btn btn-sm" style="background:#c62828;color:white" onclick="activeTab==='pivot'?exportPivotPDF():exportPDF()">⬇ PDF</button>
     <button class="btn btn-primary btn-sm" onclick="applyFilters()">Filtruoti</button>
     <button class="btn btn-clear btn-sm" onclick="clearFilters()">Išvalyti</button>
   </div>
+</div>
+
+<div class="tab-bar" id="tabBar" style="display:none">
+  <button class="tab-btn active" id="tabOps" onclick="switchTab('ops')">Operacijos</button>
+  <button class="tab-btn" id="tabPivot" onclick="switchTab('pivot')">Dienos apyvarta</button>
 </div>
 
 <div class="table-wrap" id="tableWrap" style="display:none">
@@ -268,6 +294,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <tbody id="tableBody"></tbody>
   </table>
   <div class="pagination" id="pagination"></div>
+</div>
+
+<div class="pivot-wrap" id="pivotWrap" style="display:none">
+  <div id="pivotTableContainer"></div>
 </div>
 
 <script>
@@ -650,9 +680,21 @@ function markDuplicates() {
 function showProgress(on) { document.getElementById('progressWrap').className='progress-wrap'+(on?' visible':''); if(!on)setProgress(0,''); }
 function setProgress(f,label) { document.getElementById('progressBar').style.width=(f*100)+'%'; document.getElementById('progressLabel').textContent=label; }
 
+let activeTab = 'ops';
+function switchTab(tab) {
+  activeTab = tab;
+  document.getElementById('tabOps').className   = 'tab-btn' + (tab==='ops'   ? ' active' : '');
+  document.getElementById('tabPivot').className = 'tab-btn' + (tab==='pivot' ? ' active' : '');
+  document.getElementById('tableWrap').style.display = tab==='ops'   ? 'block' : 'none';
+  document.getElementById('pivotWrap').style.display = tab==='pivot' ? 'block' : 'none';
+  if (tab==='pivot') renderPivot();
+}
+
 function updateUI() {
   const has = allTransactions.length > 0;
-  ['statsBar','filtersBar','tableWrap'].forEach(id => document.getElementById(id).style.display = has ? (id==='tableWrap'?'block':'flex') : 'none');
+  ['statsBar','filtersBar','tabBar'].forEach(id => document.getElementById(id).style.display = has ? 'flex' : 'none');
+  document.getElementById('tableWrap').style.display = has && activeTab==='ops'   ? 'block' : 'none';
+  document.getElementById('pivotWrap').style.display = has && activeTab==='pivot' ? 'block' : 'none';
   document.getElementById('loadedSummary').style.display = has ? 'flex' : 'none';
 
   const years    = [...new Set(allTransactions.map(t=>t.year).filter(Boolean))].sort();
@@ -678,9 +720,9 @@ function fillSelect(id, values, valFn, labelFn) {
 }
 
 function clearAll() {
-  allTransactions=[]; loadedFileNames=[]; allFolderFiles=[];
+  allTransactions=[]; loadedFileNames=[]; allFolderFiles=[]; activeTab='ops';
   document.getElementById('periodPanel').className='period-panel';
-  ['statsBar','filtersBar','tableWrap','loadedSummary'].forEach(id=>document.getElementById(id).style.display='none');
+  ['statsBar','filtersBar','tableWrap','pivotWrap','tabBar','loadedSummary'].forEach(id=>document.getElementById(id).style.display='none');
   document.getElementById('headerInfo').textContent='';
 }
 
@@ -703,6 +745,7 @@ function applyFilters() {
     return true;
   });
   sortFiltered(); updateStats(); currentPage=1; renderTable();
+  if (activeTab==='pivot') renderPivot();
 }
 
 function clearFilters() {
@@ -909,6 +952,125 @@ function exportPDF() {
   win.document.close();
   win.focus();
   setTimeout(() => { win.print(); }, 400);
+}
+
+// ── Pivot: dienos apyvarta ────────────────────────────────────────────────────
+function buildPivotData() {
+  // rows keyed by terminal, columns by date
+  const locMap  = {}; // terminalId -> { label, dates: { date: sum } }
+  const dateSet = new Set();
+  filtered.forEach(t => {
+    const key   = t.terminal || '—';
+    const label = [t.terminal, t.merchantName, t.merchantCity].filter(Boolean).join(' · ');
+    if (!locMap[key]) locMap[key] = { key, label, dates: {} };
+    if (t.origDate) {
+      locMap[key].dates[t.origDate] = (locMap[key].dates[t.origDate] || 0) + t.amount;
+      dateSet.add(t.origDate);
+    }
+  });
+  const dates = [...dateSet].sort();
+  const rows  = Object.values(locMap).sort((a,b) => a.key < b.key ? -1 : 1);
+  return { dates, rows };
+}
+
+function renderPivot() {
+  const container = document.getElementById('pivotTableContainer');
+  if (!filtered.length) { container.innerHTML = '<div class="empty-state" style="padding:60px;text-align:center;color:#888">Nėra duomenų</div>'; return; }
+  const { dates, rows } = buildPivotData();
+
+  // Column totals
+  const colTotals = {};
+  dates.forEach(d => colTotals[d] = 0);
+  rows.forEach(r => dates.forEach(d => { if (r.dates[d]) colTotals[d] += r.dates[d]; }));
+  const grandTotal = dates.reduce((s,d) => s + (colTotals[d]||0), 0);
+
+  let html = `<table><thead><tr>
+    <th class="col-loc">Surinkimo vieta</th>
+    ${dates.map(d=>`<th>${d.slice(5)}</th>`).join('')}
+    <th style="background:#25507a;border-left:2px solid #4a90d9">Iš viso</th>
+  </tr></thead><tbody>`;
+
+  rows.forEach(r => {
+    const rowTotal = dates.reduce((s,d) => s + (r.dates[d]||0), 0);
+    html += `<tr><td class="col-loc" title="${r.label}">${r.label}</td>`;
+    dates.forEach(d => {
+      if (r.dates[d]) html += `<td class="pivot-cell-val">${fmt(r.dates[d])}</td>`;
+      else html += `<td class="pivot-cell-empty">—</td>`;
+    });
+    html += `<td class="pivot-col-total">${fmt(rowTotal)}</td></tr>`;
+  });
+
+  // Totals row
+  html += `<tr class="pivot-total"><td class="col-loc">Iš viso</td>`;
+  dates.forEach(d => html += `<td>${fmt(colTotals[d])}</td>`);
+  html += `<td>${fmt(grandTotal)}</td></tr>`;
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function exportPivotCSV() {
+  const { dates, rows } = buildPivotData();
+  const header = ['Surinkimo vieta', ...dates, 'Iš viso'].join(';');
+  const lines  = [header];
+  const colTotals = {};
+  dates.forEach(d => colTotals[d] = 0);
+  rows.forEach(r => {
+    const rowTotal = dates.reduce((s,d) => s + (r.dates[d]||0), 0);
+    const cells = [r.label, ...dates.map(d => { const v=r.dates[d]||0; if(v) colTotals[d]+=v; return v?fmt(v).replace(',','.'):''; }), fmt(rowTotal).replace(',','.')];
+    lines.push(cells.join(';'));
+  });
+  const grandTotal = dates.reduce((s,d) => s + (colTotals[d]||0), 0);
+  lines.push(['Iš viso', ...dates.map(d => fmt(colTotals[d]).replace(',','.')), fmt(grandTotal).replace(',','.')].join(';'));
+  const blob = new Blob(['﻿'+lines.join('\n')], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob);
+  a.download = `apyvarta_${new Date().toISOString().slice(0,10)}.csv`; a.click();
+}
+
+function exportPivotPDF() {
+  const { dates, rows } = buildPivotData();
+  if (!rows.length) { alert('Nėra duomenų.'); return; }
+  const colTotals = {}; dates.forEach(d => colTotals[d]=0);
+  rows.forEach(r => dates.forEach(d => { if(r.dates[d]) colTotals[d]+=r.dates[d]; }));
+  const grandTotal = dates.reduce((s,d) => s+(colTotals[d]||0), 0);
+  const now = new Date().toLocaleString('lt-LT');
+  let html = `<!DOCTYPE html><html lang="lt"><head><meta charset="UTF-8"><title>Dienos apyvarta</title>
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}body{font-family:Arial,sans-serif;font-size:8pt;color:#111}
+  .doc-header{padding:10px 14px 8px;border-bottom:2px solid #1a3a5c;margin-bottom:12px}
+  .doc-header h1{font-size:13pt;color:#1a3a5c}.doc-header .meta{font-size:7.5pt;color:#555;margin-top:3px;display:flex;gap:20px}
+  table{width:100%;border-collapse:collapse;font-size:7.5pt}
+  thead th{background:#1a3a5c;color:white;padding:5px 6px;text-align:right;white-space:nowrap;border-right:1px solid #2a4a6c}
+  thead th.loc{text-align:left}
+  tbody td{padding:4px 6px;border-bottom:1px solid #e8ecf0;text-align:right;white-space:nowrap}
+  tbody td.loc{text-align:left;max-width:220px;overflow:hidden;text-overflow:ellipsis}
+  tbody tr:nth-child(even){background:#f8f9fb}
+  .total-row td{background:#1a3a5c!important;color:white;font-weight:700}
+  .row-total{background:#e8f0f8!important;font-weight:700;color:#1a3a5c;border-left:1px solid #b0c4de}
+  .val{color:#2e7d32;font-weight:600}.empty{color:#ccc}
+  @media print{@page{margin:10mm 8mm;size:A3 landscape}.doc-header{page-break-after:avoid}}
+</style></head><body>
+<div class="doc-header">
+  <h1>Dienos apyvarta pagal surinkimo vietas</h1>
+  <div class="meta"><span>Sugeneruota: ${now}</span><span>Vietos: ${rows.length}</span><span>Bendra suma: ${fmt(grandTotal)} EUR</span></div>
+</div>
+<table><thead><tr>
+  <th class="loc">Surinkimo vieta</th>
+  ${dates.map(d=>`<th>${d.slice(5)}</th>`).join('')}
+  <th class="row-total">Iš viso</th>
+</tr></thead><tbody>`;
+  rows.forEach(r => {
+    const rowTotal = dates.reduce((s,d) => s+(r.dates[d]||0), 0);
+    html += `<tr><td class="loc" title="${r.label}">${r.label}</td>`;
+    dates.forEach(d => html += r.dates[d] ? `<td class="val">${fmt(r.dates[d])}</td>` : `<td class="empty">—</td>`);
+    html += `<td class="row-total">${fmt(rowTotal)}</td></tr>`;
+  });
+  html += `<tr class="total-row"><td class="loc">Iš viso</td>`;
+  dates.forEach(d => html += `<td>${fmt(colTotals[d])}</td>`);
+  html += `<td class="row-total">${fmt(grandTotal)}</td></tr>`;
+  html += `</tbody></table></body></html>`;
+  const win = window.open('', '_blank');
+  win.document.write(html); win.document.close(); win.focus();
+  setTimeout(() => win.print(), 400);
 }
 
 document.addEventListener('keydown', e=>{if(e.key==='Enter')applyFilters();});
