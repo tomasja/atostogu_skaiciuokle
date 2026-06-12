@@ -133,14 +133,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div class="load-card folder-card" onclick="document.getElementById('folderInput').click()">
     <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"/></svg>
     <strong>Pasirinkti ataskaitų katalogą</strong>
-    <p>Pirmiausia pasirenka metus ir mėnesius,<br>tada įkelia tik reikiamus failus</p>
+    <p>SEB (ZIP) ir Swedbank (XML) failai.<br>Pirmiausia pasirinkite laikotarpį.</p>
     <input type="file" id="folderInput" webkitdirectory multiple style="display:none" />
   </div>
   <div class="load-card files-card" id="dropZone">
     <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.54 15.96.5 13.5.5c-1.42 0-2.67.67-3.5 1.71C9.17 1.17 7.92.5 6.5.5 4.04.5 2 2.54 2 4.67c0 .45.11.89.18 1.33H0v14h24V6h-4zm-7.5 12H11v-5.5H7l5-6 5 6h-4V18zm7.5-8h-4.82l1.24-3H20v3zm-14 0H2v-3h5.08l1.24 3H6z"/></svg>
-    <strong>Vilkite ZIP failus arba spustelėkite</strong>
+    <strong>Vilkite ZIP / XML failus arba spustelėkite</strong>
     <p>Galima įkelti kelis failus vienu metu.<br>Tinka kai norite peržiūrėti tik konkrečias dienas.</p>
-    <input type="file" id="fileInput" accept=".zip" multiple style="display:none" />
+    <input type="file" id="fileInput" accept=".zip,.xml" multiple style="display:none" />
   </div>
 </div>
 
@@ -214,6 +214,10 @@ https://github.com/nodeca/pako/blob/main/LICENSE
     <label>Kortelės tipas</label>
     <select id="fCardType"><option value="">Visi</option></select>
   </div>
+  <div class="filter-group" style="width:110px">
+    <label>Bankas</label>
+    <select id="fBank"><option value="">Visi</option></select>
+  </div>
   <label class="dup-toggle" for="fDups">
     <input type="checkbox" id="fDups" />
     <span>Tik dublikatai</span>
@@ -241,6 +245,7 @@ https://github.com/nodeca/pako/blob/main/LICENSE
         <th onclick="sortBy('rrn')" data-col="rrn">RRN <span class="sort-icon">↕</span></th>
         <th onclick="sortBy('terminal')" data-col="terminal">Terminalas <span class="sort-icon">↕</span></th>
         <th onclick="sortBy('merchantName')" data-col="merchantName">Prekybos vieta <span class="sort-icon">↕</span></th>
+        <th onclick="sortBy('bank')" data-col="bank">Bankas <span class="sort-icon">↕</span></th>
         <th onclick="sortBy('source')" data-col="source">Failas <span class="sort-icon">↕</span></th>
         <th>Pastaba</th>
       </tr>
@@ -264,9 +269,9 @@ let pageSize = 50;
 
 // ── Folder input ─────────────────────────────────────────────────────────────
 document.getElementById('folderInput').addEventListener('change', function() {
-  allFolderFiles = [...this.files].filter(f => f.name.toLowerCase().endsWith('.zip'));
+  allFolderFiles = [...this.files].filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml'); });
   this.value = '';
-  if (allFolderFiles.length === 0) { alert('Kataloge nerasta ZIP failų.'); return; }
+  if (allFolderFiles.length === 0) { alert('Kataloge nerasta ZIP ar XML failų.'); return; }
   buildPeriodPicker(allFolderFiles);
 });
 
@@ -294,7 +299,7 @@ function buildPeriodPicker(files) {
   let totalFiles = 0;
   years.forEach(y => Object.values(tree[y]).forEach(arr => totalFiles += arr.length));
 
-  document.getElementById('periodCount').textContent = `Iš viso ${totalFiles} ZIP failų (${years.length} metai)`;
+  document.getElementById('periodCount').textContent = `Iš viso ${totalFiles} failų (${years.length} metai)`;
 
   const body = document.getElementById('periodBody');
   body.innerHTML = '';
@@ -383,7 +388,8 @@ async function loadSelectedPeriods() {
   for (let i = 0; i < selected.length; i++) {
     const f = selected[i];
     setProgress(i / selected.length, `Nuskaitoma: ${f.webkitRelativePath} (${i+1}/${selected.length})`);
-    await processZipFile(f, f.webkitRelativePath || f.name);
+    if (f.name.toLowerCase().endsWith('.zip')) await processZipFile(f, f.webkitRelativePath || f.name);
+    else await processXMLFile(f, f.webkitRelativePath || f.name);
   }
   setProgress(1, `Baigta — įkelta ${selected.length} failų`);
   setTimeout(() => showProgress(false), 1500);
@@ -401,12 +407,13 @@ dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.
 fileInput.addEventListener('change', () => { handleFileObjects([...fileInput.files]); fileInput.value=''; });
 
 async function handleFileObjects(files) {
-  const zips = files.filter(f => f.name.toLowerCase().endsWith('.zip'));
-  if (!zips.length) return;
+  const valid = files.filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml'); });
+  if (!valid.length) return;
   showProgress(true);
-  for (let i = 0; i < zips.length; i++) {
-    setProgress(i / zips.length, `Nuskaitoma: ${zips[i].name}`);
-    await processZipFile(zips[i], zips[i].name);
+  for (let i = 0; i < valid.length; i++) {
+    setProgress(i / valid.length, `Nuskaitoma: ${valid[i].name}`);
+    if (valid[i].name.toLowerCase().endsWith('.zip')) await processZipFile(valid[i], valid[i].name);
+    else await processXMLFile(valid[i], valid[i].name);
   }
   showProgress(false);
   markDuplicates();
@@ -422,7 +429,7 @@ async function processZipFile(file, sourcePath) {
     for (const [name, entry] of Object.entries(zip.files)) {
       if (name.toLowerCase().endsWith('.xml')) {
         const text = await entry.async('text');
-        allTransactions.push(...parseXML(text, sourcePath));
+        allTransactions.push(...parseAnyXML(text, sourcePath));
         parsed = true;
       }
     }
@@ -430,10 +437,25 @@ async function processZipFile(file, sourcePath) {
   } catch(e) { console.warn('Klaida:', sourcePath, e.message); }
 }
 
-// ── XML parsing ───────────────────────────────────────────────────────────────
-function parseXML(xmlText, sourceName) {
+async function processXMLFile(file, sourcePath) {
+  if (loadedFileNames.includes(sourcePath)) return;
+  try {
+    const text = await file.text();
+    const txns = parseAnyXML(text, sourcePath);
+    if (txns.length > 0) { allTransactions.push(...txns); loadedFileNames.push(sourcePath); }
+  } catch(e) { console.warn('Klaida:', sourcePath, e.message); }
+}
+
+function parseAnyXML(xmlText, sourceName) {
   const parser = new DOMParser();
   const doc = parser.parseFromString(xmlText, 'application/xml');
+  const root = doc.documentElement?.tagName?.toLowerCase();
+  if (root === 'posreport') return parseSwedbank(doc, sourceName);
+  return parseSEB(doc, sourceName);
+}
+
+// ── SEB IFX XML parser ────────────────────────────────────────────────────────
+function parseSEB(doc, sourceName) {
   const results = [];
   doc.querySelectorAll('DepAcctStmtRec').forEach(stmtRec => {
     const me = stmtRec.querySelector('MerchantData');
@@ -462,7 +484,65 @@ function parseXML(xmlText, sourceName) {
         rrn: trnRec.querySelector('XferComment')?.textContent?.trim() || '',
         terminal: merchantId, merchantName, merchantCity,
         source: sourceName, year: oY, month: oM,
+        bank: 'SEB',
         isDuplicate: false, dupKey: ''
+      });
+    });
+  });
+  return results;
+}
+
+// Keep old name for ZIP inner-XML compatibility
+function parseXML(xmlText, sourceName) {
+  const parser = new DOMParser();
+  const doc = parser.parseFromString(xmlText, 'application/xml');
+  return parseSEB(doc, sourceName);
+}
+
+// ── Swedbank posreport XML parser ─────────────────────────────────────────────
+function parseSwedbank(doc, sourceName) {
+  const results = [];
+  doc.querySelectorAll('outlet').forEach(outlet => {
+    const attr = (el, a) => el.getAttribute(a) || el.querySelector(a)?.textContent?.trim() || '';
+    const merchantName = attr(outlet, 'name');
+    const merchantCity = attr(outlet, 'city');
+    const outletId     = attr(outlet, 'id');
+
+    outlet.querySelectorAll('terminal').forEach(term => {
+      const termId = attr(term, 'id') || outletId;
+
+      term.querySelectorAll('transaction').forEach(txn => {
+        const g = (sel) => txn.querySelector(sel)?.textContent?.trim() || '';
+        const rawDate = g('local_date'); // YYYYMMDD
+        const rawTime = g('local_time'); // HHMMSS
+        const origDate = rawDate.length === 8
+          ? `${rawDate.slice(0,4)}-${rawDate.slice(4,6)}-${rawDate.slice(6,8)}`
+          : rawDate;
+        const origTime = rawTime.length === 6
+          ? `${rawTime.slice(0,2)}:${rawTime.slice(2,4)}:${rawTime.slice(4,6)}`
+          : rawTime;
+        const year  = origDate.slice(0,4);
+        const month = origDate.slice(5,7);
+
+        // card_group holds brand/type for the whole group
+        const cardGroup = txn.closest('card_group');
+        const cardType  = cardGroup?.getAttribute('brand') || g('brand') || '';
+        const pan       = g('hidden_pan');
+        const card      = pan ? `*${pan}` : '';
+        const amount    = parseFloat(g('orig_amount') || '0');
+        const fee       = parseFloat(g('fee_amount')  || '0');
+
+        results.push({
+          origDate, origTime, postedDate: origDate,
+          card, cardType, trnType: 'CREDIT',
+          amount, currency: g('orig_currency') || 'EUR', fee,
+          authCode: g('auth_code'),
+          rrn: g('ret_ref_nr'),
+          terminal: termId, merchantName, merchantCity,
+          source: sourceName, year, month,
+          bank: 'Swedbank',
+          isDuplicate: false, dupKey: ''
+        });
       });
     });
   });
@@ -490,11 +570,13 @@ function updateUI() {
   const months   = [...new Set(allTransactions.map(t=>t.month).filter(Boolean))].sort((a,b)=>+a-+b);
   const terminals = [...new Set(allTransactions.map(t=>t.terminal).filter(Boolean))].sort();
   const cardTypes = [...new Set(allTransactions.map(t=>t.cardType).filter(Boolean))].sort();
+  const banks     = [...new Set(allTransactions.map(t=>t.bank).filter(Boolean))].sort();
 
   fillSelect('fYear',     years,    v=>v, v=>v);
   fillSelect('fMonth',    months,   v=>v, v=>`${v} – ${MONTH_NAMES[+v]||v}`);
   fillSelect('fTerminal', terminals,v=>v, v=>v);
   fillSelect('fCardType', cardTypes,v=>v, v=>v);
+  fillSelect('fBank',     banks,    v=>v, v=>v);
 
   document.getElementById('loadedText').textContent = `Įkelta ${loadedFileNames.length} failų, ${allTransactions.length} operacijų`;
   applyFilters();
@@ -516,7 +598,7 @@ function clearAll() {
 function applyFilters() {
   const s=v=>document.getElementById(v).value;
   const search=s('fSearch').trim().toLowerCase(), amtMin=parseFloat(s('fAmtMin'))||-Infinity, amtMax=parseFloat(s('fAmtMax'))||Infinity;
-  const dateFrom=s('fDateFrom'), dateTo=s('fDateTo'), year=s('fYear'), month=s('fMonth'), terminal=s('fTerminal'), cardType=s('fCardType');
+  const dateFrom=s('fDateFrom'), dateTo=s('fDateTo'), year=s('fYear'), month=s('fMonth'), terminal=s('fTerminal'), cardType=s('fCardType'), bank=s('fBank');
   const onlyDups=document.getElementById('fDups').checked;
   filtered=allTransactions.filter(t=>{
     if(search && ![t.card,t.rrn,t.authCode,t.merchantName].some(f=>f.toLowerCase().includes(search))) return false;
@@ -527,6 +609,7 @@ function applyFilters() {
     if(month&&t.month!==month) return false;
     if(terminal&&t.terminal!==terminal) return false;
     if(cardType&&t.cardType!==cardType) return false;
+    if(bank&&t.bank!==bank) return false;
     if(onlyDups&&!t.isDuplicate) return false;
     return true;
   });
@@ -535,7 +618,7 @@ function applyFilters() {
 
 function clearFilters() {
   ['fSearch','fAmtMin','fAmtMax','fDateFrom','fDateTo'].forEach(id=>document.getElementById(id).value='');
-  ['fYear','fMonth','fTerminal','fCardType'].forEach(id=>document.getElementById(id).value='');
+  ['fYear','fMonth','fTerminal','fCardType','fBank'].forEach(id=>document.getElementById(id).value='');
   document.getElementById('fDups').checked=false;
   applyFilters();
 }
@@ -567,7 +650,7 @@ function renderTable() {
   const tbody=document.getElementById('tableBody');
   const page=filtered.slice((currentPage-1)*pageSize, currentPage*pageSize);
   if(!page.length){
-    tbody.innerHTML=`<tr><td colspan="13"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg><p>Nėra operacijų pagal pasirinktus filtrus</p></div></td></tr>`;
+    tbody.innerHTML=`<tr><td colspan="14"><div class="empty-state"><svg viewBox="0 0 24 24"><path d="M19 3H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm-7 14l-5-5 1.41-1.41L12 14.17l7.59-7.59L21 8l-9 9z"/></svg><p>Nėra operacijų pagal pasirinktus filtrus</p></div></td></tr>`;
     renderPagination(); return;
   }
   tbody.innerHTML=page.map(t=>{
@@ -586,6 +669,7 @@ function renderTable() {
       <td><code>${t.rrn}</code></td>
       <td class="col-terminal">${t.terminal}</td>
       <td>${t.merchantName}<br><small style="color:#888">${t.merchantCity}</small></td>
+      <td><small>${t.bank||''}</small></td>
       <td class="col-source"><span title="${fullSrc}">${src}</span></td>
       <td>${dup}</td></tr>`;
   }).join('');
@@ -618,8 +702,8 @@ function changePageSize(val){pageSize=parseInt(val);currentPage=1;renderTable();
 function fmt(n){return Number(n).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
 
 function exportCSV() {
-  const cols=['origDate','origTime','postedDate','card','cardType','amount','currency','fee','authCode','rrn','terminal','merchantName','merchantCity','source','isDuplicate'];
-  const headers=['Operacijos data','Laikas','Apdorojimo data','Kortelė','Kortelės tipas','Suma','Valiuta','Komisinis','Aut. kodas','RRN','Terminalas','Prekybos vieta','Miestas','Šaltinis','Dublikatas'];
+  const cols=['origDate','origTime','postedDate','card','cardType','amount','currency','fee','authCode','rrn','terminal','merchantName','merchantCity','bank','source','isDuplicate'];
+  const headers=['Operacijos data','Laikas','Apdorojimo data','Kortelė','Kortelės tipas','Suma','Valiuta','Komisinis','Aut. kodas','RRN','Terminalas','Prekybos vieta','Miestas','Bankas','Šaltinis','Dublikatas'];
   const rows=[headers.join(';')];
   filtered.forEach(t=>rows.push(cols.map(c=>{const v=String(t[c]??'').replace(/;/g,',');return v.includes(',')?`"${v}"`:v;}).join(';')));
   const blob=new Blob(['﻿'+rows.join('\n')],{type:'text/csv;charset=utf-8'});
