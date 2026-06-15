@@ -160,14 +160,14 @@ https://github.com/nodeca/pako/blob/main/LICENSE
   <div class="load-card folder-card" onclick="document.getElementById('folderInput').click()">
     <svg viewBox="0 0 24 24"><path d="M20 6h-8l-2-2H4c-1.1 0-2 .9-2 2v12c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-1 12H5c-.55 0-1-.45-1-1V9c0-.55.45-1 1-1h14c.55 0 1 .45 1 1v8c0 .55-.45 1-1 1z"/></svg>
     <strong>Pasirinkti ataskaitų katalogą</strong>
-    <p>SEB (ZIP) ir Swedbank (XML) failai.<br>Pirmiausia pasirinkite laikotarpį.</p>
+    <p>SEB (ZIP), Swedbank (XML), Ashburn (XLSX).<br>Pirmiausia pasirinkite laikotarpį.</p>
     <input type="file" id="folderInput" webkitdirectory multiple style="display:none" />
   </div>
   <div class="load-card files-card" id="dropZone">
     <svg viewBox="0 0 24 24"><path d="M20 6h-2.18c.07-.44.18-.88.18-1.33C18 2.54 15.96.5 13.5.5c-1.42 0-2.67.67-3.5 1.71C9.17 1.17 7.92.5 6.5.5 4.04.5 2 2.54 2 4.67c0 .45.11.89.18 1.33H0v14h24V6h-4zm-7.5 12H11v-5.5H7l5-6 5 6h-4V18zm7.5-8h-4.82l1.24-3H20v3zm-14 0H2v-3h5.08l1.24 3H6z"/></svg>
-    <strong>Vilkite ZIP / XML failus arba spustelėkite</strong>
+    <strong>Vilkite ZIP / XML / XLSX failus arba spustelėkite</strong>
     <p>Galima įkelti kelis failus vienu metu.<br>Tinka kai norite peržiūrėti tik konkrečias dienas.</p>
-    <input type="file" id="fileInput" accept=".zip,.xml" multiple style="display:none" />
+    <input type="file" id="fileInput" accept=".zip,.xml,.xlsx" multiple style="display:none" />
   </div>
 </div>
 
@@ -351,9 +351,9 @@ let pageSize = 50;
 
 // ── Folder input ─────────────────────────────────────────────────────────────
 document.getElementById('folderInput').addEventListener('change', function() {
-  allFolderFiles = [...this.files].filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml'); });
+  allFolderFiles = [...this.files].filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml')||n.endsWith('.xlsx'); });
   this.value = '';
-  if (allFolderFiles.length === 0) { alert('Kataloge nerasta ZIP ar XML failų.'); return; }
+  if (allFolderFiles.length === 0) { alert('Kataloge nerasta ZIP, XML ar XLSX failų.'); return; }
   // Extract root folder name (first path segment)
   const rootName = allFolderFiles[0]?.webkitRelativePath.split('/')[0] || '?';
   buildPeriodPicker(allFolderFiles, rootName);
@@ -507,8 +507,10 @@ async function loadSelectedPeriods() {
   for (let i = 0; i < selected.length; i++) {
     const f = selected[i];
     setProgress(i / selected.length, `Nuskaitoma: ${f.webkitRelativePath} (${i+1}/${selected.length})`);
-    if (f.name.toLowerCase().endsWith('.zip')) await processZipFile(f, f.webkitRelativePath || f.name);
-    else await processXMLFile(f, f.webkitRelativePath || f.name);
+    const fn = f.name.toLowerCase();
+    if (fn.endsWith('.zip'))       await processZipFile(f, f.webkitRelativePath || f.name);
+    else if (fn.endsWith('.xlsx')) await processXLSXFile(f, f.webkitRelativePath || f.name);
+    else                           await processXMLFile(f, f.webkitRelativePath || f.name);
   }
   setProgress(1, `Baigta — įkelta ${selected.length} failų`);
   setTimeout(() => showProgress(false), 1500);
@@ -526,12 +528,14 @@ dropZone.addEventListener('drop', e => { e.preventDefault(); dropZone.classList.
 fileInput.addEventListener('change', () => { handleFileObjects([...fileInput.files]); fileInput.value=''; });
 
 async function handleFileObjects(files) {
-  const valid = files.filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml'); });
+  const valid = files.filter(f => { const n=f.name.toLowerCase(); return n.endsWith('.zip')||n.endsWith('.xml')||n.endsWith('.xlsx'); });
   if (!valid.length) return;
   showProgress(true);
   for (let i = 0; i < valid.length; i++) {
+    const n = valid[i].name.toLowerCase();
     setProgress(i / valid.length, `Nuskaitoma: ${valid[i].name}`);
-    if (valid[i].name.toLowerCase().endsWith('.zip')) await processZipFile(valid[i], valid[i].name);
+    if (n.endsWith('.zip'))  await processZipFile(valid[i], valid[i].name);
+    else if (n.endsWith('.xlsx')) await processXLSXFile(valid[i], valid[i].name);
     else await processXMLFile(valid[i], valid[i].name);
   }
   showProgress(false);
@@ -663,6 +667,98 @@ function parseSwedbank(doc, sourceName) {
           isDuplicate: false, dupKey: ''
         });
       });
+    });
+  });
+  return results;
+}
+
+// ── Ashburn XLSX parser ───────────────────────────────────────────────────────
+async function processXLSXFile(file, sourcePath) {
+  if (loadedFileNames.includes(sourcePath)) return;
+  try {
+    const zip = await JSZip.loadAsync(file);
+    const sheetEntry = zip.files['xl/worksheets/sheet1.xml'];
+    if (!sheetEntry) return;
+    const xmlText = await sheetEntry.async('text');
+    const txns = parseAshburn(xmlText, sourcePath);
+    if (txns.length > 0) { allTransactions.push(...txns); loadedFileNames.push(sourcePath); }
+  } catch(e) { console.warn('Klaida XLSX:', sourcePath, e.message); }
+}
+
+function excelSerialToDateTime(serial) {
+  const days = Math.floor(serial);
+  const timeFrac = serial - days;
+  // Excel serial: days since 1900-01-01 with leap-year bug (serial 60 = phantom Feb 29 1900)
+  const ms = (days - 25569) * 86400000;
+  const d  = new Date(ms);
+  const totalSec = Math.round(timeFrac * 86400);
+  const hh = Math.floor(totalSec / 3600), mm = Math.floor((totalSec % 3600) / 60), ss = totalSec % 60;
+  const yyyy = d.getUTCFullYear();
+  const mo   = String(d.getUTCMonth()+1).padStart(2,'0');
+  const dd   = String(d.getUTCDate()).padStart(2,'0');
+  return {
+    date: `${yyyy}-${mo}-${dd}`,
+    time: `${String(hh).padStart(2,'0')}:${String(mm).padStart(2,'0')}:${String(ss).padStart(2,'0')}`
+  };
+}
+
+function parseAshburn(xmlText, sourceName) {
+  const parser = new DOMParser();
+  const doc    = parser.parseFromString(xmlText, 'application/xml');
+  const ns     = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';
+
+  // Helper: get cell text value (handles inlineStr and numeric)
+  function cellVal(cell) {
+    if (!cell) return '';
+    const t = cell.getAttribute('t');
+    if (t === 'inlineStr') return cell.getElementsByTagNameNS(ns,'t')[0]?.textContent?.trim() || '';
+    return cell.getElementsByTagNameNS(ns,'v')[0]?.textContent?.trim() || '';
+  }
+
+  // Build column index from ref like "A2" → 0, "B2" → 1 …
+  function colIdx(ref) {
+    const letters = ref.replace(/\d/g,'').toUpperCase();
+    let idx = 0;
+    for (let i = 0; i < letters.length; i++) idx = idx*26 + (letters.charCodeAt(i)-64);
+    return idx - 1; // 0-based
+  }
+
+  const results = [];
+  let firstRow = true;
+  doc.getElementsByTagNameNS(ns,'row').forEach(row => {
+    if (firstRow) { firstRow = false; return; } // skip header row
+    // Index cells by column
+    const cells = {};
+    row.getElementsByTagNameNS(ns,'c').forEach(c => { cells[colIdx(c.getAttribute('r'))] = c; });
+    // Col mapping: A=0 EKS nr, B=1 addr, C=2 city, D=3 name, E=4 bank, F=5 termId,
+    //              G=6 amount, H=7 cash, I=8 currency, J=9 datetime, K=10 card,
+    //              L=11 rrn, M=12 authCode, N=13 voidIndicator
+    const voidIndicator = cellVal(cells[13]).trim();
+    if (voidIndicator) return; // skip voided/reversed transactions
+
+    const serialRaw = parseFloat(cellVal(cells[9]));
+    if (!serialRaw) return;
+    const { date, time } = excelSerialToDateTime(serialRaw);
+    const amount   = parseFloat(cellVal(cells[6])) || 0;
+    const year     = date.slice(0,4);
+    const month    = date.slice(5,7);
+
+    results.push({
+      origDate: date, origTime: time, postedDate: date,
+      card:        cellVal(cells[10]),
+      cardType:    '',
+      trnType:     'CREDIT',
+      amount,
+      currency:    cellVal(cells[8]) || 'EUR',
+      fee:         0,
+      authCode:    cellVal(cells[12]),
+      rrn:         cellVal(cells[11]),
+      terminal:    cellVal(cells[5]),
+      merchantName: cellVal(cells[3]),
+      merchantCity: cellVal(cells[2]),
+      source: sourceName, year, month,
+      bank: 'Ashburn',
+      isDuplicate: false, dupKey: ''
     });
   });
   return results;
