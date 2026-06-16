@@ -601,7 +601,7 @@ function parseSEB(doc, sourceName) {
       });
       results.push({
         origDate, origTime: g('OrigDt > Time'), postedDate,
-        card: g('CardAcctId > AcctId'), cardType: g('CardType'), trnType: g('TrnType'),
+        card: fmtCard(g('CardAcctId > AcctId')), cardType: g('CardType'), trnType: g('TrnType'),
         amount, currency: g('CurAmt > CurrCode') || 'EUR', fee,
         authCode: trnRec.querySelector('XferId')?.textContent?.trim() || '',
         rrn: trnRec.querySelector('XferComment')?.textContent?.trim() || '',
@@ -651,7 +651,7 @@ function parseSwedbank(doc, sourceName) {
         const cardGroup = txn.closest('card_group');
         const cardType  = cardGroup?.getAttribute('brand') || g('brand') || '';
         const pan       = g('hidden_pan');
-        const card      = pan ? `*${pan}` : '';
+        const card      = fmtCard(pan);
         const amount    = parseFloat(g('orig_amount') || '0');
         const fee       = parseFloat(g('fee_amount')  || '0');
 
@@ -745,7 +745,7 @@ function parseAshburn(xmlText, sourceName) {
 
     results.push({
       origDate: date, origTime: time, postedDate: date,
-      card:        cellVal(cells[10]),
+      card:        fmtCard(cellVal(cells[10])),
       cardType:    '',
       trnType:     'CREDIT',
       amount,
@@ -928,6 +928,12 @@ function renderPagination() {
 function goPage(p){const pages=Math.ceil(filtered.length/pageSize);if(p<1||p>pages)return;currentPage=p;renderTable();}
 function changePageSize(val){pageSize=parseInt(val);currentPage=1;renderTable();}
 function fmt(n){return Number(n).toFixed(2).replace('.',',').replace(/\B(?=(\d{3})+(?!\d))/g,' ');}
+function fmtCard(raw) {
+  if (!raw) return '';
+  const digits = raw.replace(/\D/g,'');
+  const last4 = digits.slice(-4);
+  return last4 ? `*${last4}` : raw;
+}
 
 function exportCSV() {
   const cols=['origDate','origTime','postedDate','card','cardType','amount','currency','fee','authCode','rrn','terminal','merchantName','merchantCity','bank','source','isDuplicate'];
